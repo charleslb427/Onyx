@@ -6,10 +6,16 @@ import UserNotifications
 struct WebViewWrapper: UIViewRepresentable {
     @Binding var refreshTrigger: UUID
     
+    // SINGLETON PROCESS POOL (Critical for Session Persistence)
+    static let sharedPool = WKProcessPool()
+    
     func makeUIView(context: Context) -> WKWebView {
         let config = WKWebViewConfiguration()
         config.allowsInlineMediaPlayback = true
         config.allowsPictureInPictureMediaPlayback = true
+        
+        // PERSISTENCE: Link to shared pool + default store
+        config.processPool = WebViewWrapper.sharedPool
         config.websiteDataStore = WKWebsiteDataStore.default()
         
         // --- 1. CSS GENERATOR (Dynamic) ---
