@@ -10,11 +10,23 @@ struct WebViewWrapper: UIViewRepresentable {
         let config = WKWebViewConfiguration()
         config.allowsInlineMediaPlayback = true
         config.allowsPictureInPictureMediaPlayback = true
-        
-        // PERSISTENCE: Explicitly use default persistent store
         config.websiteDataStore = WKWebsiteDataStore.default()
         
-        // --- NOTIFICATION BRIDGE ---
+        // --- 1. CSS GENERATOR (Dynamic) ---
+        let css = generateCSS()
+        
+        // --- 2. INJECT CSS AT DOCUMENT START (Fix Flash/Start Bug) ---
+        // This ensures filtering happens BEFORE rendering
+        let cssScript = """
+        var s = document.createElement('style');
+        s.id = 'onyx-style';
+        s.textContent = `\(css)`;
+        document.documentElement.appendChild(s);
+        """
+        let userScriptCSS = WKUserScript(source: cssScript, injectionTime: .atDocumentStart, forMainFrameOnly: false)
+        config.userContentController.addUserScript(userScriptCSS)
+        
+        // --- 3. NOTIFICATION BRIDGE ---
         let notificationShimScript = """
         window.Notification = function(title, options) {
             var payload = { title: title, body: options ? (options.body || '') : '', tag: options ? (options.tag || '') : '' };
@@ -24,17 +36,16 @@ struct WebViewWrapper: UIViewRepresentable {
         window.Notification.permission = 'granted';
         window.Notification.requestPermission = function(cb) { if(cb) cb('granted'); return Promise.resolve('granted'); };
         """
-        let userScript = WKUserScript(source: notificationShimScript, injectionTime: .atDocumentStart, forMainFrameOnly: false)
-        config.userContentController.addUserScript(userScript)
+        let userScriptNotif = WKUserScript(source: notificationShimScript, injectionTime: .atDocumentStart, forMainFrameOnly: false)
+        config.userContentController.addUserScript(userScriptNotif)
         config.userContentController.add(context.coordinator, name: "notificationBridge")
-        // ---------------------------
         
         let webView = WKWebView(frame: .zero, configuration: config)
         webView.navigationDelegate = context.coordinator
         webView.uiDelegate = context.coordinator
         
-        // DISABLE BROWSER SWIPE TO FIX BUGS
-        webView.allowsBackForwardNavigationGestures = false 
+        // --- 4. RE-ENABLE SWIPE (Using Policy to fix bugs) ---
+        webView.allowsBackForwardNavigationGestures = true
         
         let refreshControl = UIRefreshControl()
         refreshControl.addTarget(context.coordinator, action: #selector(Coordinator.handleRefresh), for: .valueChanged)
@@ -44,22 +55,56 @@ struct WebViewWrapper: UIViewRepresentable {
         context.coordinator.webView = webView
         
         loadRequest(for: webView)
-
         return webView
+    }
+    
+    // Helper to generate CSS string based on current settings
+    func generateCSS() -> String {
+        let defaults = UserDefaults.standard
+        let hideReels = defaults.bool(forKey: "hideReels")
+        let hideExplore = defaults.bool(forKey: "hideExplore")
+        let hideAds = defaults.bool(forKey: "hideAds")
+        
+        var css = ""
+        // Force Hide (Aggressive)
+        if hideReels {
+            css += "a[href*='/reels/'], div[style*='reels'], svg[aria-label*='Reels'], a[href='/reels/'] { display: none !important; } div:has(> a[href*='/reels/']) { display: none !important; } "
+        }
+        if hideExplore {
+            css += "a[href='/explore/'], a[href*='/explore'] { display: none !important; } div:has(> a[href*='/explore/']) { display: none !important; } "
+        }
+        if hideAds {
+            css += "article:has(span[class*='sponsored']), article:has(span:contains('Sponsorisé')), article:has(span:contains('Sponsored')) { display: none !important; } "
+        }
+        
+        // UI Cleanup
+        css += "div[role='tablist'], div:has(> a[href='/']) { justify-content: space-evenly !important; } div[role='banner'] { display: none !important; } footer { display: none !important; } .AppCTA { display: none !important; }"
+        
+        return css
     }
 
     func loadRequest(for webView: WKWebView) {
         if let url = URL(string: "https://www.instagram.com/") {
-            // Use default cache policy (protocol compliant) to avoid stale login pages
-            // .returnCacheDataElseLoad can be too aggressive for auth tokens
             let request = URLRequest(url: url)
             webView.load(request)
         }
     }
-
+    
+    // When Settings Close -> Update CSS immediately without full reload if possible, or reload
     func updateUIView(_ uiView: WKWebView, context: Context) {
         if context.coordinator.lastRefreshId != refreshTrigger {
             context.coordinator.lastRefreshId = refreshTrigger
+            
+            // Update CSS dynamically
+            let newCSS = generateCSS()
+            let js = """
+            var s = document.getElementById('onyx-style');
+            if (s) { s.textContent = `\(newCSS)`; }
+            else {
+                s = document.createElement('style'); s.id = 'onyx-style'; s.textContent = `\(newCSS)`; document.documentElement.appendChild(s);
+            }
+            """
+            uiView.evaluateJavaScript(js, completionHandler: nil)
             uiView.reload()
         }
     }
@@ -93,9 +138,31 @@ struct WebViewWrapper: UIViewRepresentable {
 
         @objc func handleRefresh() { webView?.reload() }
 
-        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-            webView.scrollView.refreshControl?.endRefreshing()
-            injectFilters(webView)
+        // --- NAVIGATION POLICY (The Anti-White Screen Fix) ---
+        func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+            guard let url = navigationAction.request.url?.absoluteString else {
+                decisionHandler(.allow)
+                return
+            }
+            
+            let defaults = UserDefaults.standard
+            
+            // If Reels Hidden AND User tries to navigate to Reels (Click or Swipe Back) -> CANCEL
+            if defaults.bool(forKey: "hideReels") && url.contains("/reels/") {
+                print("⛔ Blocked navigation to Reels")
+                decisionHandler(.cancel)
+                return
+            }
+            
+            // If Explore Hidden -> CANCEL
+            if defaults.bool(forKey: "hideExplore") && url.contains("/explore/") {
+                print("⛔ Blocked navigation to Explore")
+                decisionHandler(.cancel)
+                return
+            }
+            
+            // Allow everything else
+            decisionHandler(.allow)
         }
         
         @available(iOS 15.0, *)
@@ -103,22 +170,5 @@ struct WebViewWrapper: UIViewRepresentable {
         
         @available(iOS 15.0, *)
         func webView(_ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse, decisionHandler: @escaping (WKNavigationResponsePolicy) -> Void) { decisionHandler(.allow) }
-
-        func injectFilters(_ webView: WKWebView) {
-            let defaults = UserDefaults.standard
-            let hideReels = defaults.bool(forKey: "hideReels")
-            let hideExplore = defaults.bool(forKey: "hideExplore")
-            let hideAds = defaults.bool(forKey: "hideAds")
-            
-            var css = ""
-            if hideReels { css += "a[href*='/reels/'], div[style*='reels'], svg[aria-label*='Reels'], a[href='/reels/'] { display: none !important; } div:has(> a[href*='/reels/']) { display: none !important; } " }
-            if hideExplore { css += "a[href='/explore/'], a[href*='/explore'] { display: none !important; } div:has(> a[href*='/explore/']) { display: none !important; } " }
-            if hideAds { css += "article:has(span[class*='sponsored']), article:has(span:contains('Sponsorisé')), article:has(span:contains('Sponsored')) { display: none !important; } " }
-            
-            css += "div[role='tablist'], div:has(> a[href='/']) { justify-content: space-evenly !important; } div[role='banner'] { display: none !important; } div:has(button:contains('Ouvrir in App')) { display: none !important; } footer { display: none !important; }"
-            
-            let js = "var s=document.createElement('style');s.id='onyx-style';s.textContent=\"\(css)\";document.head.appendChild(s);"
-            webView.evaluateJavaScript(js, completionHandler: nil)
-        }
     }
 }

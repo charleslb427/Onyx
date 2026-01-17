@@ -44,6 +44,13 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         application.registerForRemoteNotifications()
         UIApplication.shared.setMinimumBackgroundFetchInterval(UIApplication.backgroundFetchIntervalMinimum)
         
+        // SET DEFAULTS (First Launch)
+        UserDefaults.standard.register(defaults: [
+            "hideReels": true,
+            "hideExplore": true,
+            "hideAds": true
+        ])
+        
         // Start WebSocket Listener (Requires external server)
         WebSocketManager.shared.connect()
         
