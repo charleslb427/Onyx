@@ -1,6 +1,7 @@
 
 import SwiftUI
 import UserNotifications
+import BackgroundTasks
 
 @main
 struct OnyxApp: App {
@@ -14,18 +15,18 @@ struct OnyxApp: App {
                 WebViewWrapper(refreshTrigger: $refreshTrigger)
                     .edgesIgnoringSafeArea(.bottom)
                 
+                // DISCRETE SETTINGS BUTTON (Ghost Mode)
                 Button(action: { showSettings = true }) {
                     Image(systemName: "gearshape.fill")
                         .resizable()
-                        .frame(width: 24, height: 24)
-                        .foregroundColor(Color.primary)
+                        .frame(width: 20, height: 20) // Smaller
+                        .foregroundColor(Color.primary.opacity(0.3)) // Very transparent (Ghost)
                         .padding(12)
-                        .background(VisualEffectView(effect: UIBlurEffect(style: .systemMaterial)))
-                        .clipShape(Circle())
-                        .shadow(color: Color.black.opacity(0.15), radius: 5, x: 0, y: 2)
+                        .background(Color.clear) // No background logic, just the icon
+                        .contentShape(Rectangle()) // Hit area
                 }
-                .padding(.trailing, 20)
-                .padding(.bottom, 80)
+                .padding(.trailing, 16)
+                .padding(.bottom, 60) // Just above the nav bar
             }
             .sheet(isPresented: $showSettings, onDismiss: { refreshTrigger = UUID() }) {
                 SettingsView()
@@ -35,38 +36,22 @@ struct OnyxApp: App {
 }
 
 class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
+    
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
         
-        // Request Notification Permission
         UNUserNotificationCenter.current().delegate = self
-        let authOptions: UNAuthorizationOptions = [.alert, .badge, .sound]
-        UNUserNotificationCenter.current().requestAuthorization(options: authOptions) { _, _ in }
-        
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { _, _ in }
         application.registerForRemoteNotifications()
+        UIApplication.shared.setMinimumBackgroundFetchInterval(UIApplication.backgroundFetchIntervalMinimum)
         return true
     }
-    
-    // Called when a notification arrives while app is in foreground
-    func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
-        completionHandler([.banner, .sound])
-    }
-    
-    // Successful Registration (Token received)
-    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
-        let tokenParts = deviceToken.map { data in String(format: "%02.2hhx", data) }
-        let token = tokenParts.joined()
-        print("Device Token: \(token)")
-        // In a real app, send this token to your server.
-        // For Web Push, the WebView handles the service worker registration internally if allowed.
-    }
-    
-    func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
-        print("Failed to register: \(error)")
-    }
-}
 
-struct VisualEffectView: UIViewRepresentable {
-    var effect: UIVisualEffect?
-    func makeUIView(context: UIViewRepresentableContext<Self>) -> UIVisualEffectView { UIVisualEffectView() }
-    func updateUIView(_ uiView: UIVisualEffectView, context: UIViewRepresentableContext<Self>) { uiView.effect = effect }
+    func application(_ application: UIApplication, performFetchWithCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
+        print("Background Fetch")
+        completionHandler(.newData)
+    }
+
+    func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        completionHandler([.banner, .sound, .badge])
+    }
 }
