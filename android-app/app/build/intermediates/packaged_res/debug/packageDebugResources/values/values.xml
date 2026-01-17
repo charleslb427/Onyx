@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="call_app_entries">
+        <item>Onyx</item>
+        <item>Instagram</item>
+    </string-array>
+    <string-array name="call_app_values">
+        <item>onyx</item>
+        <item>instagram</item>
+    </string-array>
+    <color name="background">#FFFFFF</color>
+    <color name="instagram_gradient_middle">#000000</color>
+    <color name="instagram_gradient_start">#000000</color>
+    <color name="primary">#000000</color>
+    <color name="primary_variant">#000000</color>
+    <color name="secondary">#0095F6</color>
+    <color name="status_bar">#FFFFFF</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="text_primary">#000000</color>
+    <color name="text_secondary">#737373</color>
+    <string name="app_name">Onyx</string>
+    <string name="menu_home">Accueil</string>
+    <string name="menu_messages">Messages</string>
+    <string name="menu_refresh">Actualiser</string>
+    <string name="menu_settings">Paramètres</string>
+    <string name="notification_channel_calls">Appels Instagram</string>
+    <string name="notification_channel_name">Messages Instagram</string>
+    <string name="notification_permission_button">Autoriser</string>
+    <string name="notification_permission_message">Pour recevoir les notifications Instagram, autorisez Onyx à lire les notifications.</string>
+    <string name="notification_permission_title">Accès aux notifications</string>
+    <string name="pref_category_about">À propos</string>
+    <string name="pref_category_calls">Appels</string>
+    <string name="pref_category_filters">Filtres</string>
+    <string name="pref_category_notifications">Notifications</string>
+    <string name="pref_disclaimer">Avertissement</string>
+    <string name="pref_disclaimer_summary">Application indépendante, non affiliée à Meta.</string>
+    <string name="pref_hide_ads">Masquer les publicités</string>
+    <string name="pref_hide_ads_summary">Tente de cacher les posts sponsorisés</string>
+    <string name="pref_hide_explore">Masquer Explorer</string>
+    <string name="pref_hide_explore_summary">Cache le lien vers la page Explorer</string>
+    <string name="pref_hide_reels">Masquer les Reels</string>
+    <string name="pref_hide_reels_summary">Cache tous les liens et contenus Reels</string>
+    <string name="pref_notification_listener">Activer les notifications</string>
+    <string name="pref_notification_listener_summary">Intercepter les notifications Instagram</string>
+    <string name="pref_open_calls_in">Ouvrir les appels dans</string>
+    <string name="pref_open_calls_instagram">Instagram</string>
+    <string name="pref_open_calls_onyx">Onyx</string>
+    <string name="pref_version">Version</string>
+    <string name="settings_title">Paramètres</string>
+    <style name="Theme.Onyx" parent="Theme.Material3.Light.NoActionBar">
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorPrimaryVariant">@color/primary_variant</item>
+        <item name="colorSecondary">@color/secondary</item>
+        
+        
+        <item name="android:statusBarColor">@color/status_bar</item>
+        <item name="android:windowLightStatusBar">true</item>
+        
+        
+        <item name="android:navigationBarColor">@color/background</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        
+        <item name="android:windowBackground">@color/background</item>
+        <item name="colorSurface">@color/surface</item>
+        
+        
+        <item name="colorControlActivated">@color/secondary</item> 
+        
+        
+        <item name="preferenceTheme">@style/PreferenceThemeOverlay</item>
+    </style>
+</resources>

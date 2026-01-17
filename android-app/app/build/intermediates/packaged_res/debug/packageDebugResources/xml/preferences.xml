@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory
+        android:title="@string/pref_category_notifications"
+        app:iconSpaceReserved="false">
+
+        <Preference
+            android:key="notification_listener"
+            android:title="@string/pref_notification_listener"
+            android:summary="Cliquez pour configurer"
+            app:iconSpaceReserved="false" />
+
+        <ListPreference
+            android:key="open_calls_in"
+            android:title="@string/pref_open_calls_in"
+            android:defaultValue="onyx"
+            android:entries="@array/call_app_entries"
+            android:entryValues="@array/call_app_values"
+            app:iconSpaceReserved="false" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="@string/pref_category_filters"
+        app:iconSpaceReserved="false">
+
+        <SwitchPreferenceCompat
+            android:key="hide_reels"
+            android:title="@string/pref_hide_reels"
+            android:summary="@string/pref_hide_reels_summary"
+            android:defaultValue="true"
+            app:iconSpaceReserved="false" />
+
+        <SwitchPreferenceCompat
+            android:key="hide_explore"
+            android:title="@string/pref_hide_explore"
+            android:summary="@string/pref_hide_explore_summary"
+            android:defaultValue="true"
+            app:iconSpaceReserved="false" />
+
+        <SwitchPreferenceCompat
+            android:key="hide_ads"
+            android:title="@string/pref_hide_ads"
+            android:summary="@string/pref_hide_ads_summary"
+            android:defaultValue="true"
+            app:iconSpaceReserved="false" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="@string/pref_category_about"
+        app:iconSpaceReserved="false">
+
+        <Preference
+            android:key="version"
+            android:title="@string/pref_version"
+            android:summary="1.0"
+            android:selectable="false"
+            app:iconSpaceReserved="false" />
+
+        <Preference
+            android:key="disclaimer"
+            android:title="@string/pref_disclaimer"
+            android:summary="@string/pref_disclaimer_summary"
+            android:selectable="false"
+            app:iconSpaceReserved="false" />
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

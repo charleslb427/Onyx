@@ -1,0 +1,21 @@
+
+name: Onyx
+options:
+  bundleIdPrefix: com.onyx
+targets:
+  Onyx:
+    type: application
+    platform: iOS
+    deploymentTarget: "15.0"
+    sources: [Sources]
+    info:
+      path: Sources/Info.plist
+      properties:
+        CFBundleDisplayName: "Onyx"
+        UISupportsDocumentBrowser: false
+        UIUserInterfaceStyle: Light
+        UIViewControllerBasedStatusBarAppearance: true
+    settings:
+      current:
+        PRODUCT_BUNDLE_IDENTIFIER: com.onyx.app
+        INFOPLIST_KEY_lsApplicationCategoryType: public.app-category.social-networking

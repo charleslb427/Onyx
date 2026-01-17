@@ -1,0 +1,240 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="com.onyx.app"
+4    android:versionCode="1"
+5    android:versionName="1.0" >
+6
+7    <uses-sdk
+8        android:minSdkVersion="24"
+9        android:targetSdkVersion="34" />
+10
+11    <!-- Internet -->
+12    <uses-permission android:name="android.permission.INTERNET" />
+12-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:6:5-67
+12-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:6:22-64
+13    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+13-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:7:5-79
+13-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:7:22-76
+14
+15    <!-- Notifications -->
+16    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+16-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:10:5-77
+16-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:10:22-74
+17    <uses-permission android:name="android.permission.VIBRATE" />
+17-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:11:5-66
+17-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:11:22-63
+18
+19    <!-- Notification Listener (to intercept Instagram notifications) -->
+20    <uses-permission android:name="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE" />
+20-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:14:5-93
+20-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:14:22-90
+21
+22    <!-- Calls (Camera & Microphone for video/audio calls) -->
+23    <uses-permission android:name="android.permission.CAMERA" />
+23-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:17:5-65
+23-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:17:22-62
+24    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+24-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:18:5-71
+24-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:18:22-68
+25    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+25-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:19:5-80
+25-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:19:22-77
+26
+27    <!-- Keep app running for calls -->
+28    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+28-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:22:5-77
+28-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:22:22-74
+29    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+29-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:23:5-89
+29-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:23:22-86
+30    <uses-permission android:name="android.permission.WAKE_LOCK" />
+30-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:24:5-68
+30-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:24:22-65
+31
+32    <uses-feature
+32-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:26:5-85
+33        android:name="android.hardware.camera"
+33-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:26:19-57
+34        android:required="false" />
+34-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:26:58-82
+35    <uses-feature
+35-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:27:5-95
+36        android:name="android.hardware.camera.autofocus"
+36-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:27:19-67
+37        android:required="false" />
+37-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:27:68-92
+38    <uses-feature
+38-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:28:5-89
+39        android:name="android.hardware.microphone"
+39-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:28:19-61
+40        android:required="false" />
+40-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:28:62-86
+41
+42    <permission
+42-->[androidx.core:core:1.12.0] C:\Users\famil\.gradle\caches\transforms-4\d78fa7c6b7912b2d1a5d15d07607782f\transformed\core-1.12.0\AndroidManifest.xml:22:5-24:47
+43        android:name="com.onyx.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+43-->[androidx.core:core:1.12.0] C:\Users\famil\.gradle\caches\transforms-4\d78fa7c6b7912b2d1a5d15d07607782f\transformed\core-1.12.0\AndroidManifest.xml:23:9-81
+44        android:protectionLevel="signature" />
+44-->[androidx.core:core:1.12.0] C:\Users\famil\.gradle\caches\transforms-4\d78fa7c6b7912b2d1a5d15d07607782f\transformed\core-1.12.0\AndroidManifest.xml:24:9-44
+45
+46    <uses-permission android:name="com.onyx.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
+46-->[androidx.core:core:1.12.0] C:\Users\famil\.gradle\caches\transforms-4\d78fa7c6b7912b2d1a5d15d07607782f\transformed\core-1.12.0\AndroidManifest.xml:26:5-97
+46-->[androidx.core:core:1.12.0] C:\Users\famil\.gradle\caches\transforms-4\d78fa7c6b7912b2d1a5d15d07607782f\transformed\core-1.12.0\AndroidManifest.xml:26:22-94
+47
+48    <application
+48-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:30:5-69:19
+49        android:allowBackup="true"
+49-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:31:9-35
+50        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
+50-->[androidx.core:core:1.12.0] C:\Users\famil\.gradle\caches\transforms-4\d78fa7c6b7912b2d1a5d15d07607782f\transformed\core-1.12.0\AndroidManifest.xml:28:18-86
+51        android:debuggable="true"
+52        android:extractNativeLibs="false"
+53        android:hardwareAccelerated="true"
+53-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:38:9-43
+54        android:icon="@mipmap/ic_launcher"
+54-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:32:9-43
+55        android:label="@string/app_name"
+55-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:33:9-41
+56        android:largeHeap="true"
+56-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:39:9-33
+57        android:roundIcon="@mipmap/ic_launcher_round"
+57-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:34:9-54
+58        android:supportsRtl="true"
+58-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:35:9-35
+59        android:testOnly="true"
+60        android:theme="@style/Theme.Onyx"
+60-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:36:9-42
+61        android:usesCleartextTraffic="false" >
+61-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:37:9-45
+62        <activity
+62-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:41:9-51:20
+63            android:name="com.onyx.app.MainActivity"
+63-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:42:13-41
+64            android:configChanges="orientation|screenSize|keyboardHidden"
+64-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:44:13-74
+65            android:exported="true"
+65-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:43:13-36
+66            android:launchMode="singleTask"
+66-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:45:13-44
+67            android:screenOrientation="unspecified" >
+67-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:46:13-52
+68            <intent-filter>
+68-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:47:13-50:29
+69                <action android:name="android.intent.action.MAIN" />
+69-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:48:17-69
+69-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:48:25-66
+70
+71                <category android:name="android.intent.category.LAUNCHER" />
+71-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:49:17-77
+71-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:49:27-74
+72            </intent-filter>
+73        </activity>
+74        <activity
+74-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:53:9-57:58
+75            android:name="com.onyx.app.SettingsActivity"
+75-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:54:13-45
+76            android:exported="false"
+76-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:55:13-37
+77            android:label="@string/settings_title"
+77-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:56:13-51
+78            android:parentActivityName="com.onyx.app.MainActivity" />
+78-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:57:13-55
+79
+80        <!-- Notification Listener Service -->
+81        <service
+81-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:60:9-67:19
+82            android:name="com.onyx.app.InstagramNotificationListener"
+82-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:61:13-58
+83            android:exported="true"
+83-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:62:13-36
+84            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE" >
+84-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:63:13-87
+85            <intent-filter>
+85-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:64:13-66:29
+86                <action android:name="android.service.notification.NotificationListenerService" />
+86-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:65:17-99
+86-->C:\Users\famil\Downloads\IcareLite\android-app\app\src\main\AndroidManifest.xml:65:25-96
+87            </intent-filter>
+88        </service>
+89
+90        <provider
+90-->[androidx.emoji2:emoji2:1.2.0] C:\Users\famil\.gradle\caches\transforms-4\2c813c1f61ed13ace0b02a1978b27a3b\transformed\emoji2-1.2.0\AndroidManifest.xml:24:9-32:20
+91            android:name="androidx.startup.InitializationProvider"
+91-->[androidx.emoji2:emoji2:1.2.0] C:\Users\famil\.gradle\caches\transforms-4\2c813c1f61ed13ace0b02a1978b27a3b\transformed\emoji2-1.2.0\AndroidManifest.xml:25:13-67
+92            android:authorities="com.onyx.app.androidx-startup"
+92-->[androidx.emoji2:emoji2:1.2.0] C:\Users\famil\.gradle\caches\transforms-4\2c813c1f61ed13ace0b02a1978b27a3b\transformed\emoji2-1.2.0\AndroidManifest.xml:26:13-68
+93            android:exported="false" >
+93-->[androidx.emoji2:emoji2:1.2.0] C:\Users\famil\.gradle\caches\transforms-4\2c813c1f61ed13ace0b02a1978b27a3b\transformed\emoji2-1.2.0\AndroidManifest.xml:27:13-37
+94            <meta-data
+94-->[androidx.emoji2:emoji2:1.2.0] C:\Users\famil\.gradle\caches\transforms-4\2c813c1f61ed13ace0b02a1978b27a3b\transformed\emoji2-1.2.0\AndroidManifest.xml:29:13-31:52
+95                android:name="androidx.emoji2.text.EmojiCompatInitializer"
+95-->[androidx.emoji2:emoji2:1.2.0] C:\Users\famil\.gradle\caches\transforms-4\2c813c1f61ed13ace0b02a1978b27a3b\transformed\emoji2-1.2.0\AndroidManifest.xml:30:17-75
+96                android:value="androidx.startup" />
+96-->[androidx.emoji2:emoji2:1.2.0] C:\Users\famil\.gradle\caches\transforms-4\2c813c1f61ed13ace0b02a1978b27a3b\transformed\emoji2-1.2.0\AndroidManifest.xml:31:17-49
+97            <meta-data
+97-->[androidx.lifecycle:lifecycle-process:2.6.1] C:\Users\famil\.gradle\caches\transforms-4\88688cbf699ee1e42ada0b010965751c\transformed\lifecycle-process-2.6.1\AndroidManifest.xml:29:13-31:52
+98                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
+98-->[androidx.lifecycle:lifecycle-process:2.6.1] C:\Users\famil\.gradle\caches\transforms-4\88688cbf699ee1e42ada0b010965751c\transformed\lifecycle-process-2.6.1\AndroidManifest.xml:30:17-78
+99                android:value="androidx.startup" />
+99-->[androidx.lifecycle:lifecycle-process:2.6.1] C:\Users\famil\.gradle\caches\transforms-4\88688cbf699ee1e42ada0b010965751c\transformed\lifecycle-process-2.6.1\AndroidManifest.xml:31:17-49
+100            <meta-data
+100-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\famil\.gradle\caches\transforms-4\5c2718feb88014b77632c4c0c15121b1\transformed\profileinstaller-1.3.0\AndroidManifest.xml:29:13-31:52
+101                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
+101-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\famil\.gradle\caches\transforms-4\5c2718feb88014b77632c4c0c15121b1\transformed\profileinstaller-1.3.0\AndroidManifest.xml:30:17-85
+102                android:value="androidx.startup" />
+102-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\famil\.gradle\caches\transforms-4\5c2718feb88014b77632c4c0c15121b1\transformed\profileinstaller-1.3.0\AndroidManifest.xml:31:17-49
+103        </provider>
+104
+105        <uses-library
+105-->[androidx.window:window:1.0.0] C:\Users\famil\.gradle\caches\transforms-4\a820511e4a836e89b45a65257d825f2d\transformed\window-1.0.0\AndroidManifest.xml:25:9-27:40
+106            android:name="androidx.window.extensions"
+106-->[androidx.window:window:1.0.0] C:\Users\famil\.gradle\caches\transforms-4\a820511e4a836e89b45a65257d825f2d\transformed\window-1.0.0\AndroidManifest.xml:26:13-54
+107            android:required="false" />
+107-->[androidx.window:window:1.0.0] C:\Users\famil\.gradle\caches\transforms-4\a820511e4a836e89b45a65257d825f2d\transformed\window-1.0.0\AndroidManifest.xml:27:13-37
+108        <uses-library
+108-->[androidx.window:window:1.0.0] C:\Users\famil\.gradle\caches\transforms-4\a820511e4a836e89b45a65257d825f2d\transformed\window-1.0.0\AndroidManifest.xml:28:9-30:40
+109            android:name="androidx.window.sidecar"
+109-->[androidx.window:window:1.0.0] C:\Users\famil\.gradle\caches\transforms-4\a820511e4a836e89b45a65257d825f2d\transformed\window-1.0.0\AndroidManifest.xml:29:13-51
+110            android:required="false" />
+110-->[androidx.window:window:1.0.0] C:\Users\famil\.gradle\caches\transforms-4\a820511e4a836e89b45a65257d825f2d\transformed\window-1.0.0\AndroidManifest.xml:30:13-37
+111
+112        <receiver
+112-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\famil\.gradle\caches\transforms-4\5c2718feb88014b77632c4c0c15121b1\transformed\profileinstaller-1.3.0\AndroidManifest.xml:34:9-52:20
+113            android:name="androidx.profileinstaller.ProfileInstallReceiver"
+113-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\famil\.gradle\caches\transforms-4\5c2718feb88014b77632c4c0c15121b1\transformed\profileinstaller-1.3.0\AndroidManifest.xml:35:13-76
+114            android:directBootAware="false"
+114-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\famil\.gradle\caches\transforms-4\5c2718feb88014b77632c4c0c15121b1\transformed\profileinstaller-1.3.0\AndroidManifest.xml:36:13-44
+115            android:enabled="true"
+115-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\famil\.gradle\caches\transforms-4\5c2718feb88014b77632c4c0c15121b1\transformed\profileinstaller-1.3.0\AndroidManifest.xml:37:13-35
+116            android:exported="true"
+116-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\famil\.gradle\caches\transforms-4\5c2718feb88014b77632c4c0c15121b1\transformed\profileinstaller-1.3.0\AndroidManifest.xml:38:13-36
+117            android:permission="android.permission.DUMP" >
+117-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\famil\.gradle\caches\transforms-4\5c2718feb88014b77632c4c0c15121b1\transformed\profileinstaller-1.3.0\AndroidManifest.xml:39:13-57
+118            <intent-filter>
+118-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\famil\.gradle\caches\transforms-4\5c2718feb88014b77632c4c0c15121b1\transformed\profileinstaller-1.3.0\AndroidManifest.xml:40:13-42:29
+119                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE" />
+119-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\famil\.gradle\caches\transforms-4\5c2718feb88014b77632c4c0c15121b1\transformed\profileinstaller-1.3.0\AndroidManifest.xml:41:17-91
+119-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\famil\.gradle\caches\transforms-4\5c2718feb88014b77632c4c0c15121b1\transformed\profileinstaller-1.3.0\AndroidManifest.xml:41:25-88
+120            </intent-filter>
+121            <intent-filter>
+121-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\famil\.gradle\caches\transforms-4\5c2718feb88014b77632c4c0c15121b1\transformed\profileinstaller-1.3.0\AndroidManifest.xml:43:13-45:29
+122                <action android:name="androidx.profileinstaller.action.SKIP_FILE" />
+122-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\famil\.gradle\caches\transforms-4\5c2718feb88014b77632c4c0c15121b1\transformed\profileinstaller-1.3.0\AndroidManifest.xml:44:17-85
+122-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\famil\.gradle\caches\transforms-4\5c2718feb88014b77632c4c0c15121b1\transformed\profileinstaller-1.3.0\AndroidManifest.xml:44:25-82
+123            </intent-filter>
+124            <intent-filter>
+124-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\famil\.gradle\caches\transforms-4\5c2718feb88014b77632c4c0c15121b1\transformed\profileinstaller-1.3.0\AndroidManifest.xml:46:13-48:29
+125                <action android:name="androidx.profileinstaller.action.SAVE_PROFILE" />
+125-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\famil\.gradle\caches\transforms-4\5c2718feb88014b77632c4c0c15121b1\transformed\profileinstaller-1.3.0\AndroidManifest.xml:47:17-88
+125-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\famil\.gradle\caches\transforms-4\5c2718feb88014b77632c4c0c15121b1\transformed\profileinstaller-1.3.0\AndroidManifest.xml:47:25-85
+126            </intent-filter>
+127            <intent-filter>
+127-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\famil\.gradle\caches\transforms-4\5c2718feb88014b77632c4c0c15121b1\transformed\profileinstaller-1.3.0\AndroidManifest.xml:49:13-51:29
+128                <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION" />
+128-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\famil\.gradle\caches\transforms-4\5c2718feb88014b77632c4c0c15121b1\transformed\profileinstaller-1.3.0\AndroidManifest.xml:50:17-95
+128-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\famil\.gradle\caches\transforms-4\5c2718feb88014b77632c4c0c15121b1\transformed\profileinstaller-1.3.0\AndroidManifest.xml:50:25-92
+129            </intent-filter>
+130        </receiver>
+131    </application>
+132
+133</manifest>

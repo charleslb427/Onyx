@@ -1,0 +1,142 @@
+[
+    {
+        "merged": "C:\\Users\\famil\\.gradle\\daemon\\8.7\\com.onyx.app-debug-42:\\xml_preferences.xml.flat",
+        "source": "C:\\Users\\famil\\.gradle\\daemon\\8.7\\com.onyx.app-main-44:\\xml\\preferences.xml"
+    },
+    {
+        "merged": "C:\\Users\\famil\\.gradle\\daemon\\8.7\\com.onyx.app-debug-42:\\layout_activity_main.xml.flat",
+        "source": "C:\\Users\\famil\\.gradle\\daemon\\8.7\\com.onyx.app-main-44:\\layout\\activity_main.xml"
+    },
+    {
+        "merged": "C:\\Users\\famil\\.gradle\\daemon\\8.7\\com.onyx.app-debug-42:\\drawable_ic_home.xml.flat",
+        "source": "C:\\Users\\famil\\.gradle\\daemon\\8.7\\com.onyx.app-main-44:\\drawable\\ic_home.xml"
+    },
+    {
+        "merged": "C:\\Users\\famil\\.gradle\\daemon\\8.7\\com.onyx.app-debug-42:\\mipmap-mdpi_ic_launcher_round.png.flat",
+        "source": "C:\\Users\\famil\\.gradle\\daemon\\8.7\\com.onyx.app-main-44:\\mipmap-mdpi\\ic_launcher_round.png"
+    },
+    {
+        "merged": "C:\\Users\\famil\\.gradle\\daemon\\8.7\\com.onyx.app-debug-42:\\drawable_ic_notification.xml.flat",
+        "source": "C:\\Users\\famil\\.gradle\\daemon\\8.7\\com.onyx.app-main-44:\\drawable\\ic_notification.xml"
+    },
+    {
+        "merged": "C:\\Users\\famil\\.gradle\\daemon\\8.7\\com.onyx.app-debug-42:\\mipmap-xxxhdpi_ic_launcher.png.flat",
+        "source": "C:\\Users\\famil\\.gradle\\daemon\\8.7\\com.onyx.app-main-44:\\mipmap-xxxhdpi\\ic_launcher.png"
+    },
+    {
+        "merged": "com.onyx.app-debug-42:/mipmap-hdpi_ic_launcher.png.flat",
+        "source": "com.onyx.app-main-44:/mipmap-hdpi/ic_launcher.png"
+    },
+    {
+        "merged": "C:\\Users\\famil\\.gradle\\daemon\\8.7\\com.onyx.app-debug-42:\\drawable_ic_refresh.xml.flat",
+        "source": "C:\\Users\\famil\\.gradle\\daemon\\8.7\\com.onyx.app-main-44:\\drawable\\ic_refresh.xml"
+    },
+    {
+        "merged": "com.onyx.app-debug-42:/mipmap-xxhdpi_ic_launcher_round.png.flat",
+        "source": "com.onyx.app-main-44:/mipmap-xxhdpi/ic_launcher_round.png"
+    },
+    {
+        "merged": "C:\\Users\\famil\\.gradle\\daemon\\8.7\\com.onyx.app-debug-42:\\mipmap-xxhdpi_ic_launcher.png.flat",
+        "source": "C:\\Users\\famil\\.gradle\\daemon\\8.7\\com.onyx.app-main-44:\\mipmap-xxhdpi\\ic_launcher.png"
+    },
+    {
+        "merged": "C:\\Users\\famil\\.gradle\\daemon\\8.7\\com.onyx.app-debug-42:\\mipmap-xxhdpi_ic_launcher_round.png.flat",
+        "source": "C:\\Users\\famil\\.gradle\\daemon\\8.7\\com.onyx.app-main-44:\\mipmap-xxhdpi\\ic_launcher_round.png"
+    },
+    {
+        "merged": "C:\\Users\\famil\\.gradle\\daemon\\8.7\\com.onyx.app-debug-42:\\layout_activity_settings.xml.flat",
+        "source": "C:\\Users\\famil\\.gradle\\daemon\\8.7\\com.onyx.app-main-44:\\layout\\activity_settings.xml"
+    },
+    {
+        "merged": "C:\\Users\\famil\\.gradle\\daemon\\8.7\\com.onyx.app-debug-42:\\mipmap-anydpi-v26_ic_launcher.xml.flat",
+        "source": "C:\\Users\\famil\\.gradle\\daemon\\8.7\\com.onyx.app-main-44:\\mipmap-anydpi-v26\\ic_launcher.xml"
+    },
+    {
+        "merged": "com.onyx.app-debug-42:/mipmap-xxxhdpi_ic_launcher.png.flat",
+        "source": "com.onyx.app-main-44:/mipmap-xxxhdpi/ic_launcher.png"
+    },
+    {
+        "merged": "C:\\Users\\famil\\.gradle\\daemon\\8.7\\com.onyx.app-debug-42:\\mipmap-xhdpi_ic_launcher_round.png.flat",
+        "source": "C:\\Users\\famil\\.gradle\\daemon\\8.7\\com.onyx.app-main-44:\\mipmap-xhdpi\\ic_launcher_round.png"
+    },
+    {
+        "merged": "C:\\Users\\famil\\.gradle\\daemon\\8.7\\com.onyx.app-debug-42:\\menu_main_menu.xml.flat",
+        "source": "C:\\Users\\famil\\.gradle\\daemon\\8.7\\com.onyx.app-main-44:\\menu\\main_menu.xml"
+    },
+    {
+        "merged": "C:\\Users\\famil\\.gradle\\daemon\\8.7\\com.onyx.app-debug-42:\\drawable_ic_call.xml.flat",
+        "source": "C:\\Users\\famil\\.gradle\\daemon\\8.7\\com.onyx.app-main-44:\\drawable\\ic_call.xml"
+    },
+    {
+        "merged": "C:\\Users\\famil\\.gradle\\daemon\\8.7\\com.onyx.app-debug-42:\\drawable_ic_settings.xml.flat",
+        "source": "C:\\Users\\famil\\.gradle\\daemon\\8.7\\com.onyx.app-main-44:\\drawable\\ic_settings.xml"
+    },
+    {
+        "merged": "com.onyx.app-debug-42:/mipmap-xhdpi_ic_launcher.png.flat",
+        "source": "com.onyx.app-main-44:/mipmap-xhdpi/ic_launcher.png"
+    },
+    {
+        "merged": "com.onyx.app-debug-42:/mipmap-hdpi_ic_launcher_round.png.flat",
+        "source": "com.onyx.app-main-44:/mipmap-hdpi/ic_launcher_round.png"
+    },
+    {
+        "merged": "com.onyx.app-debug-42:/mipmap-xxxhdpi_ic_launcher_round.png.flat",
+        "source": "com.onyx.app-main-44:/mipmap-xxxhdpi/ic_launcher_round.png"
+    },
+    {
+        "merged": "C:\\Users\\famil\\.gradle\\daemon\\8.7\\com.onyx.app-debug-42:\\mipmap-hdpi_ic_launcher.png.flat",
+        "source": "C:\\Users\\famil\\.gradle\\daemon\\8.7\\com.onyx.app-main-44:\\mipmap-hdpi\\ic_launcher.png"
+    },
+    {
+        "merged": "C:\\Users\\famil\\.gradle\\daemon\\8.7\\com.onyx.app-debug-42:\\drawable_ic_settings_fab.xml.flat",
+        "source": "C:\\Users\\famil\\.gradle\\daemon\\8.7\\com.onyx.app-main-44:\\drawable\\ic_settings_fab.xml"
+    },
+    {
+        "merged": "com.onyx.app-debug-42:/mipmap-xhdpi_ic_launcher_round.png.flat",
+        "source": "com.onyx.app-main-44:/mipmap-xhdpi/ic_launcher_round.png"
+    },
+    {
+        "merged": "C:\\Users\\famil\\.gradle\\daemon\\8.7\\com.onyx.app-debug-42:\\drawable_ic_messages.xml.flat",
+        "source": "C:\\Users\\famil\\.gradle\\daemon\\8.7\\com.onyx.app-main-44:\\drawable\\ic_messages.xml"
+    },
+    {
+        "merged": "com.onyx.app-debug-42:/mipmap-mdpi_ic_launcher.png.flat",
+        "source": "com.onyx.app-main-44:/mipmap-mdpi/ic_launcher.png"
+    },
+    {
+        "merged": "C:\\Users\\famil\\.gradle\\daemon\\8.7\\com.onyx.app-debug-42:\\mipmap-xhdpi_ic_launcher.png.flat",
+        "source": "C:\\Users\\famil\\.gradle\\daemon\\8.7\\com.onyx.app-main-44:\\mipmap-xhdpi\\ic_launcher.png"
+    },
+    {
+        "merged": "C:\\Users\\famil\\.gradle\\daemon\\8.7\\com.onyx.app-debug-42:\\mipmap-mdpi_ic_launcher.png.flat",
+        "source": "C:\\Users\\famil\\.gradle\\daemon\\8.7\\com.onyx.app-main-44:\\mipmap-mdpi\\ic_launcher.png"
+    },
+    {
+        "merged": "C:\\Users\\famil\\.gradle\\daemon\\8.7\\com.onyx.app-debug-42:\\mipmap-hdpi_ic_launcher_round.png.flat",
+        "source": "C:\\Users\\famil\\.gradle\\daemon\\8.7\\com.onyx.app-main-44:\\mipmap-hdpi\\ic_launcher_round.png"
+    },
+    {
+        "merged": "C:\\Users\\famil\\.gradle\\daemon\\8.7\\com.onyx.app-debug-42:\\mipmap-xxxhdpi_ic_launcher_round.png.flat",
+        "source": "C:\\Users\\famil\\.gradle\\daemon\\8.7\\com.onyx.app-main-44:\\mipmap-xxxhdpi\\ic_launcher_round.png"
+    },
+    {
+        "merged": "com.onyx.app-debug-42:/mipmap-mdpi_ic_launcher_round.png.flat",
+        "source": "com.onyx.app-main-44:/mipmap-mdpi/ic_launcher_round.png"
+    },
+    {
+        "merged": "C:\\Users\\famil\\.gradle\\daemon\\8.7\\com.onyx.app-debug-42:\\drawable_ic_launcher_foreground.xml.flat",
+        "source": "C:\\Users\\famil\\.gradle\\daemon\\8.7\\com.onyx.app-main-44:\\drawable\\ic_launcher_foreground.xml"
+    },
+    {
+        "merged": "C:\\Users\\famil\\.gradle\\daemon\\8.7\\com.onyx.app-debug-42:\\mipmap-anydpi-v26_ic_launcher_round.xml.flat",
+        "source": "C:\\Users\\famil\\.gradle\\daemon\\8.7\\com.onyx.app-main-44:\\mipmap-anydpi-v26\\ic_launcher_round.xml"
+    },
+    {
+        "merged": "C:\\Users\\famil\\.gradle\\daemon\\8.7\\com.onyx.app-debug-42:\\drawable_ic_launcher_background.xml.flat",
+        "source": "C:\\Users\\famil\\.gradle\\daemon\\8.7\\com.onyx.app-main-44:\\drawable\\ic_launcher_background.xml"
+    },
+    {
+        "merged": "com.onyx.app-debug-42:/mipmap-xxhdpi_ic_launcher.png.flat",
+        "source": "com.onyx.app-main-44:/mipmap-xxhdpi/ic_launcher.png"
+    }
+]

@@ -1,0 +1,38 @@
+{
+  "manifest_version": 3,
+  "name": "Onyx",
+  "version": "1.0",
+  "icons": {
+    "16": "IconsExtension/icon16.png",
+    "32": "IconsExtension/icon32.png",
+    "48": "IconsExtension/icon48.png",
+    "128": "IconsExtension/icon128.png"
+  },
+  "action": {
+    "default_title": "Onyx",
+    "default_icon": {
+      "16": "IconsExtension/icon16.png",
+      "32": "IconsExtension/icon32.png",
+      "48": "IconsExtension/icon48.png",
+      "128": "IconsExtension/icon128.png"
+    },
+    "default_popup": "options.html"
+  },
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "https://www.instagram.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.instagram.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_start"
+    }
+  ]
+}

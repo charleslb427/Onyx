@@ -1,0 +1,54 @@
+
+name: iOS Build
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Install XcodeGen
+      run: brew install xcodegen
+
+    - name: Generate Xcode Project
+      run: |
+        cd ios-app
+        xcodegen generate
+        cd ..
+
+    - name: Build Archive
+      run: |
+        cd ios-app
+        # Build the project using xcodebuild
+        # CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO ensures we can build without a paid dev account
+        xcodebuild -project Onyx.xcodeproj \
+                   -scheme Onyx \
+                   -sdk iphoneos \
+                   -configuration Release \
+                   -archivePath $PWD/build/Onyx.xcarchive \
+                   clean archive \
+                   CODE_SIGN_IDENTITY="" \
+                   CODE_SIGNING_REQUIRED=NO \
+                   CODE_SIGNING_ALLOWED=NO
+
+    - name: Export IPA
+      run: |
+        cd ios-app
+        # Create Payload folder structure for IPA
+        mkdir -p Payload
+        cp -r build/Onyx.xcarchive/Products/Applications/Onyx.app Payload/
+        
+        # Zip it up to create .ipa
+        zip -r Onyx.ipa Payload
+
+    - name: Upload IPA
+      uses: actions/upload-artifact@v3
+      with:
+        name: Onyx-iOS-Unsigned
+        path: ios-app/Onyx.ipa
