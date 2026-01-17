@@ -38,5 +38,10 @@
     <string>Onyx a besoin de la caméra pour les appels vidéo Instagram.</string>
     <key>NSMicrophoneUsageDescription</key>
     <string>Onyx a besoin du micro pour les messages vocaux et les appels.</string>
+    <key>UIBackgroundModes</key>
+    <array>
+        <string>fetch</string>
+        <string>remote-notification</string>
+    </array>
 </dict>
 </plist>
