@@ -12,10 +12,16 @@ targets:
       path: Sources/Info.plist
       properties:
         CFBundleDisplayName: "Onyx"
-        UISupportsDocumentBrowser: false
-        UIUserInterfaceStyle: Light
-        UIViewControllerBasedStatusBarAppearance: true
+        UISupportsDocumentBrowser: "NO"
+        UIUserInterfaceStyle: "Light"
+        UIViewControllerBasedStatusBarAppearance: "YES"
+        LSApplicationCategoryType: "public.app-category.social-networking"
     settings:
-      current:
+      base:
         PRODUCT_BUNDLE_IDENTIFIER: com.onyx.app
-        INFOPLIST_KEY_lsApplicationCategoryType: public.app-category.social-networking
+        CODE_SIGN_IDENTITY: ""
+        CODE_SIGNING_REQUIRED: "NO"
+        CODE_SIGNING_ALLOWED: "NO"
+        IPHONEOS_DEPLOYMENT_TARGET: "15.0"
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
