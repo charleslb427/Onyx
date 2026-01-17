@@ -11,7 +11,7 @@ jobs:
     runs-on: macos-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Install XcodeGen
       run: brew install xcodegen
@@ -48,7 +48,7 @@ jobs:
         zip -r Onyx.ipa Payload
 
     - name: Upload IPA
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: Onyx-iOS-Unsigned
         path: ios-app/Onyx.ipa
