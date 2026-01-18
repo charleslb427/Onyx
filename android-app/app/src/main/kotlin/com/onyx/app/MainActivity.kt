@@ -186,9 +186,9 @@ class MainActivity : AppCompatActivity() {
             mediaPlaybackRequiresUserGesture = false
             javaScriptCanOpenWindowsAutomatically = true
             
-            // 🥸 User Agent Spoofing (Crucial for Calls/Voice Msgs)
-            // We mimic a modern Chrome on Android to ensure Insta enables WebRTC features
-            userAgentString = "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
+            // 🥸 User Agent Spoofing (TABLET MODE)
+            // Trying to force Tablet UI to unlock Calls/Voice Messages
+            userAgentString = "Mozilla/5.0 (Linux; Android 13; SM-X800) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
             
             // Smooth Rendering
             setRenderPriority(WebSettings.RenderPriority.HIGH)
