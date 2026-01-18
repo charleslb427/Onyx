@@ -356,6 +356,22 @@ class MainActivity : AppCompatActivity() {
                     });
                     window.onyxObserver.observe(document.body, { childList: true, subtree: true });
                 }
+                
+                // 4. TOUCH SHIM (Vital for Desktop Mode)
+                document.addEventListener('touchend', function(e) {
+                    var touch = e.changedTouches[0];
+                    var target = document.elementFromPoint(touch.clientX, touch.clientY);
+                    var clickable = target ? target.closest('button, [role="button"], a, svg') : null;
+                    if (clickable) {
+                        var opts = {
+                            view: window, bubbles: true, cancelable: true,
+                            clientX: touch.clientX, clientY: touch.clientY, screenX: touch.screenX, screenY: touch.screenY
+                        };
+                        clickable.dispatchEvent(new MouseEvent('mousedown', opts));
+                        clickable.dispatchEvent(new MouseEvent('mouseup', opts));
+                        clickable.dispatchEvent(new MouseEvent('click', opts));
+                    }
+                }, {passive: true});
             })();
         """.trimIndent()
 

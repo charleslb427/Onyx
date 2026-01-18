@@ -276,6 +276,25 @@ struct WebViewWrapper: UIViewRepresentable {
                     });
                     window.onyxObserver.observe(document.body, { childList: true, subtree: true });
                 }
+                
+                // 4. TOUCH SHIM (Vital for Desktop Mode on Mobile)
+                // Forces a 'click' event when touching buttons, as Desktop site might ignore touch
+                document.addEventListener('touchend', function(e) {
+                    var touch = e.changedTouches[0];
+                    var target = document.elementFromPoint(touch.clientX, touch.clientY);
+                    // Find closest clickable element
+                    var clickable = target.closest('button, [role="button"], a, svg');
+                    if (clickable) {
+                        // Dispatch synthetic Mouse Events
+                        var opts = {
+                            view: window, bubbles: true, cancelable: true,
+                            clientX: touch.clientX, clientY: touch.clientY, screenX: touch.screenX, screenY: touch.screenY
+                        };
+                        clickable.dispatchEvent(new MouseEvent('mousedown', opts));
+                        clickable.dispatchEvent(new MouseEvent('mouseup', opts));
+                        clickable.dispatchEvent(new MouseEvent('click', opts));
+                    }
+                }, {passive: true});
             })();
             """
             webView.evaluateJavaScript(js, completionHandler: nil)
