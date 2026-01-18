@@ -15,6 +15,18 @@ struct WebViewWrapper: UIViewRepresentable {
         config.processPool = AppDelegate.shared.webViewProcessPool
         config.websiteDataStore = WKWebsiteDataStore.default()
         
+        // --- EARLY CSS INJECTION (Reduces flash when loading) ---
+        let earlyHideScript = """
+        (function() {
+            var style = document.createElement('style');
+            style.id = 'onyx-early-hide';
+            style.textContent = 'a[href*="/reels/"], a[href="/reels/"], a[href="/explore/"], a[href*="/explore"], div[role="banner"], footer { opacity: 0 !important; transition: opacity 0.1s; }';
+            document.documentElement.appendChild(style);
+        })();
+        """
+        let earlyHideUserScript = WKUserScript(source: earlyHideScript, injectionTime: .atDocumentStart, forMainFrameOnly: false)
+        config.userContentController.addUserScript(earlyHideUserScript)
+        
         // --- NOTIFICATION BRIDGE ---
         let notificationShimScript = """
         window.Notification = function(title, options) {
@@ -32,7 +44,8 @@ struct WebViewWrapper: UIViewRepresentable {
         let webView = WKWebView(frame: .zero, configuration: config)
         webView.navigationDelegate = context.coordinator
         webView.uiDelegate = context.coordinator
-        webView.allowsBackForwardNavigationGestures = true
+        // ✅ DISABLED to prevent white screen when swiping at home
+        webView.allowsBackForwardNavigationGestures = false
         
         // Pull to Refresh
         let refreshControl = UIRefreshControl()
@@ -89,12 +102,14 @@ struct WebViewWrapper: UIViewRepresentable {
 
         // --- NAVIGATION DELEGATE ---
         
-        // ✅ INJECT LOCALSTORAGE EARLY (before page fully renders)
+        // ✅ INJECT LOCALSTORAGE + FILTERS EARLY (before page fully renders)
         func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
             if !hasInjectedLocalStorage {
                 SessionManager.shared.injectLocalStorage(to: webView)
                 hasInjectedLocalStorage = true
             }
+            // Inject filters early to reduce flash
+            injectFilters(into: webView)
         }
         
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
