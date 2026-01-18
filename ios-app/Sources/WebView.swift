@@ -187,17 +187,18 @@ struct WebViewWrapper: UIViewRepresentable {
             }
             
             if hideExplore {
-                // 1. Target URL specific masking
-                // If we are strictly on /explore/, hide the grid images
-                // Use opacity to avoid breaking JS layout/loaders, and pointer-events to prevent clicks
-                css += "main[role='main'] a[href^='/p/'], main[role='main'] a[href^='/reel/'] { opacity: 0 !important; pointer-events: none !important; height: 0 !important; width: 0 !important; } "
+                // 1. STRICT BLOCKING of Feed Items (Posts & Reels)
+                // We target links to specific content.
+                // Search results (Users, Hashtags) are safely ignored as they don't start with /p/ or /reel/
+                css += "main[role='main'] a[href^='/p/'], main[role='main'] a[href^='/reel/'] { display: none !important; } "
                 
-                // 2. Do NOT hide main containers indiscriminately as it hides Search Results
-                // Search results usually have a specific 'role' or structure (list of items)
-                // We want to keep anything that looks like a User List Item visible
-                
-                // 3. Remove the 'Loading' spinner if possible (svg acting as loader)
+                // 2. Hide Loaders/Spinners
+                // If the feed is empty, Insta might show a loader. Hide it.
                 css += "svg[aria-label='Chargement...'], svg[aria-label='Loading...'] { display: none !important; } "
+                
+                // 3. Hide the div that typically holds the grid to collapse whitespace
+                // (Only if it strictly contains posts, avoiding search containers)
+                // css += "div:has(> a[href^='/p/']) { display: none !important; }" // Too risky for now, stick to item hiding
             }
             
             if hideAds {
@@ -205,9 +206,12 @@ struct WebViewWrapper: UIViewRepresentable {
             }
             
             // Common cleanup
-            // Ensure inputs and Search Results (often in a dialog or container) are visible
+            // FORCE SEARCH VISIBILITY
+            // Inputs, Dialogs (Results), and Links to Users/Tags must be visible
             css += "input[type='text'], input[placeholder='Rechercher'], input[aria-label='Rechercher'] { display: block !important; opacity: 1 !important; visibility: visible !important; }"
             css += "div[role='dialog'] { display: block !important; opacity: 1 !important; visibility: visible !important; } "
+            css += "a[href^='/name/'], a[href^='/explore/tags/'], a[href^='/explore/locations/'] { display: inline-block !important; opacity: 1 !important; visibility: visible !important; }"
+            
             css += "div[role='tablist'] { justify-content: space-evenly !important; } div[role='banner'], footer, .AppCTA { display: none !important; }"
             
             let safeCSS = css.replacingOccurrences(of: "`", with: "\\`")
@@ -226,9 +230,8 @@ struct WebViewWrapper: UIViewRepresentable {
                 }
                 style.textContent = `\(safeCSS)`;
                 
-                // 2. Define removal function
+                // 2. JS Cleanup (Backup for CSS)
                 function cleanContent() {
-                    // Try to remove standard loading spinners if Explore is hidden
                     \(hideExplore ? "var loaders = document.querySelectorAll('svg[aria-label=\"Chargement...\"], svg[aria-label=\"Loading...\"]'); loaders.forEach(l => l.style.display = 'none');" : "")
                 }
                 
