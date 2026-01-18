@@ -2,52 +2,55 @@
 import SwiftUI
 import WebKit
 import UserNotifications
+import AVFoundation
 
 struct WebViewWrapper: UIViewRepresentable {
     @Binding var refreshTrigger: UUID
     
+    private func requestNativePermissions() {
+        AVCaptureDevice.requestAccess(for: .video) { _ in }
+        AVCaptureDevice.requestAccess(for: .audio) { _ in }
+    }
+    
     func makeUIView(context: Context) -> WKWebView {
+        requestNativePermissions()
+        
         let config = WKWebViewConfiguration()
         config.allowsInlineMediaPlayback = true
         config.allowsPictureInPictureMediaPlayback = true
+        config.mediaTypesRequiringUserActionForPlayback = []
         
-        // ✅ PERSISTENCE
         config.processPool = AppDelegate.shared.webViewProcessPool
         config.websiteDataStore = WKWebsiteDataStore.default()
         
-        // --- EARLY CSS INJECTION & SPOOFING ---
         let earlyHideScript = """
         (function() {
-            // 1. Hide Elements Flash
             var style = document.createElement('style');
             style.id = 'onyx-early-hide';
-            // Initially hide potentially blocked content to reduce flash
             style.textContent = 'a[href*="/reels/"], a[href="/reels/"], a[href="/explore/"], a[href*="/explore"], div[role="banner"], footer { opacity: 0 !important; transition: opacity 0.1s; }';
             document.documentElement.appendChild(style);
             
-            // 2. Spoof PWA Standalone Mode (Attempt to unlock PWA features)
             try {
-                Object.defineProperty(window.navigator, 'standalone', {
-                    get: function() { return true; }
-                });
+                Object.defineProperty(window.navigator, 'standalone', { get: function() { return true; } });
             } catch(e) {}
             
-            // 3. 🛡️ ANTI-DETECTION (Partial): HIDE WEBVIEW
-            // Tricks Instagram stealth checks
+            // 🛡️ ANTI-DETECTION
             try {
                 Object.defineProperty(navigator, 'webdriver', { get: () => false });
                 Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
-                // NOTE: We do NOT spoof window.innerWidth here anymore to allow responsive UI
+            } catch(e) {}
+            
+            // 🚀 HINT MOBILE VERSION (New Trick)
+            try {
+                 localStorage.setItem('display_version', 'mobile');
             } catch(e) {}
         })();
         """
         let earlyHideUserScript = WKUserScript(source: earlyHideScript, injectionTime: .atDocumentStart, forMainFrameOnly: false)
         config.userContentController.addUserScript(earlyHideUserScript)
         
-        // ALLOW POPUPS (Calls)
         config.preferences.javaScriptCanOpenWindowsAutomatically = true
 
-        // --- NOTIFICATION BRIDGE ---
         let notificationShimScript = """
         window.Notification = function(title, options) {
             var payload = { title: title, body: options ? (options.body || '') : '' };
@@ -65,27 +68,26 @@ struct WebViewWrapper: UIViewRepresentable {
         webView.navigationDelegate = context.coordinator
         webView.uiDelegate = context.coordinator
         
-        // ✅ START DISABLED - will be enabled dynamically when there's history
         webView.allowsBackForwardNavigationGestures = false
         
-        // Pull to Refresh
         let refreshControl = UIRefreshControl()
         refreshControl.addTarget(context.coordinator, action: #selector(Coordinator.handleRefresh), for: .valueChanged)
         webView.scrollView.refreshControl = refreshControl
         
-        // 🖥️ DESKTOP UA with MOBILE SPOOFING
+        // Desktop UA
         webView.customUserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15"
         
         context.coordinator.webView = webView
         
-        // ✅ RESTORE SESSION THEN LOAD WITH HEADERS
         SessionManager.shared.restoreSession(to: webView) {
             if let url = URL(string: "https://www.instagram.com/") {
                 var request = URLRequest(url: url)
-                // 🛡️ STEALTH HEADERS
+                // 🛡️ FULL STEALTH HEADERS
                 request.setValue("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15", forHTTPHeaderField: "User-Agent")
                 request.setValue("https://www.instagram.com", forHTTPHeaderField: "Referer")
                 request.setValue("en-US,en;q=0.9", forHTTPHeaderField: "Accept-Language")
+                request.setValue("gzip, deflate, br", forHTTPHeaderField: "Accept-Encoding")
+                request.setValue("*/*", forHTTPHeaderField: "Accept")
                 request.setValue("document", forHTTPHeaderField: "Sec-Fetch-Dest")
                 request.setValue("navigate", forHTTPHeaderField: "Sec-Fetch-Mode")
                 request.setValue("none", forHTTPHeaderField: "Sec-Fetch-Site")
@@ -144,8 +146,6 @@ struct WebViewWrapper: UIViewRepresentable {
             webView?.reload()
         }
 
-        // --- NAVIGATION ---
-        
         func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
             if !hasInjectedLocalStorage {
                 SessionManager.shared.injectLocalStorage(to: webView)
@@ -183,7 +183,6 @@ struct WebViewWrapper: UIViewRepresentable {
             decisionHandler(.allow)
         }
         
-        // ✅ HANDLE POPUPS (Force open in same WebView)
         func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration, for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
             if navigationAction.targetFrame == nil {
                 webView.load(navigationAction.request)
@@ -232,7 +231,6 @@ struct WebViewWrapper: UIViewRepresentable {
                 css += "article:has(span:contains('Sponsored')), article:has(span:contains('Sponsorisé')) { display: none !important; } "
             }
             
-            // 🚀 FORCE MOBILE LAYOUT (CSS) for Desktop UA
             css += """
                  @media (min-width: 0px) { body { --grid-numcols: 1 !important; font-size: 16px !important; } }
                  div[role="main"] { max-width: 100% !important; margin: 0 !important; }
@@ -240,7 +238,6 @@ struct WebViewWrapper: UIViewRepresentable {
                  [class*="sidebar"], [class*="desktop"] { display: none !important; }
             """
             
-            // Common cleanup & FORCE SEARCH VISIBILITY
             css += "input[type='text'], input[placeholder='Rechercher'], input[aria-label='Rechercher'] { display: block !important; opacity: 1 !important; visibility: visible !important; }"
             css += "div[role='dialog'] { display: block !important; opacity: 1 !important; visibility: visible !important; } "
             css += "a[href^='/name/'], a[href^='/explore/tags/'], a[href^='/explore/locations/'] { display: inline-block !important; opacity: 1 !important; visibility: visible !important; }"
@@ -248,10 +245,8 @@ struct WebViewWrapper: UIViewRepresentable {
             
             let safeCSS = css.replacingOccurrences(of: "`", with: "\\`")
             
-            // ✅ MUTATION OBSERVER & TOUCH SHIM V2
             let js = """
             (function() {
-                // 0. Force Mobile Viewport (Vital for Desktop UA on Mobile)
                 var meta = document.querySelector('meta[name="viewport"]');
                 if (!meta) {
                     meta = document.createElement('meta');
@@ -260,7 +255,6 @@ struct WebViewWrapper: UIViewRepresentable {
                 }
                 meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover';
                 
-                // 1. Inject Style Rule
                 var styleId = 'onyx-style';
                 var style = document.getElementById(styleId);
                 if (!style) {
@@ -270,12 +264,10 @@ struct WebViewWrapper: UIViewRepresentable {
                 }
                 style.textContent = `\(safeCSS)`;
                 
-                // 2. JS Cleanup Loop
                 function cleanContent() {
                      \(hideExplore ? "var loaders = document.querySelectorAll('svg[aria-label=\"Chargement...\"], svg[aria-label=\"Loading...\"]'); loaders.forEach(l => l.style.display = 'none');" : "")
                 }
                 
-                // 3. Setup Observer
                 if (!window.onyxObserver) {
                     cleanContent();
                     window.onyxObserver = new MutationObserver(function(mutations) {
@@ -284,7 +276,6 @@ struct WebViewWrapper: UIViewRepresentable {
                     window.onyxObserver.observe(document.body, { childList: true, subtree: true });
                 }
                 
-                // 4. TOUCH SHIM V2 (Pointer Events Support)
                 document.addEventListener('touchend', function(e) {
                     var touch = e.changedTouches[0];
                     var target = document.elementFromPoint(touch.clientX, touch.clientY);

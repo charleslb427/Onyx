@@ -79,6 +79,8 @@ class MainActivity : AppCompatActivity() {
             "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
             "Referer" to "https://www.instagram.com/",
             "Accept-Language" to "en-US,en;q=0.9",
+            "Accept-Encoding" to "gzip, deflate, br",
+            "Accept" to "*/*",
             "Sec-Fetch-Dest" to "document",
             "Sec-Fetch-Mode" to "navigate",
             "Sec-Fetch-Site" to "none"
@@ -107,22 +109,13 @@ class MainActivity : AppCompatActivity() {
     private fun createNotificationChannels() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val notificationManager = getSystemService(NotificationManager::class.java)
-            
-            val messageChannel = NotificationChannel(
-                "onyx_messages",
-                getString(R.string.notification_channel_name),
-                NotificationManager.IMPORTANCE_HIGH
-            ).apply {
+            val messageChannel = NotificationChannel("onyx_messages", getString(R.string.notification_channel_name), NotificationManager.IMPORTANCE_HIGH).apply {
                 description = "Messages Instagram via Onyx"
                 enableVibration(true)
             }
             notificationManager.createNotificationChannel(messageChannel)
             
-            val callChannel = NotificationChannel(
-                "onyx_calls",
-                getString(R.string.notification_channel_calls),
-                NotificationManager.IMPORTANCE_HIGH
-            ).apply {
+            val callChannel = NotificationChannel("onyx_calls", getString(R.string.notification_channel_calls), NotificationManager.IMPORTANCE_HIGH).apply {
                 description = "Appels Instagram via Onyx"
                 enableVibration(true)
             }
@@ -132,22 +125,15 @@ class MainActivity : AppCompatActivity() {
 
     private fun requestNotificationPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) 
-                != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(
-                    this,
-                    arrayOf(Manifest.permission.POST_NOTIFICATIONS),
-                    1001
-                )
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), 1001)
             }
         }
     }
 
     private fun checkNotificationListenerPermission() {
         val enabledListeners = NotificationManagerCompat.getEnabledListenerPackages(this)
-        if (!enabledListeners.contains(packageName)) {
-            // Let user find it in settings
-        }
+        if (!enabledListeners.contains(packageName)) { }
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -174,13 +160,9 @@ class MainActivity : AppCompatActivity() {
             mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
             mediaPlaybackRequiresUserGesture = false
             javaScriptCanOpenWindowsAutomatically = true
-            
-            // 🥸 DESKTOP USER AGENT (To unlock Calls) + Mobile Viewport Fix (in JS)
             userAgentString = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
             
-            // Allow Popups
             setSupportMultipleWindows(true)
-            javaScriptCanOpenWindowsAutomatically = true
             setRenderPriority(WebSettings.RenderPriority.HIGH)
         }
 
@@ -207,24 +189,17 @@ class MainActivity : AppCompatActivity() {
                 val hideReels = prefs.getBoolean("hide_reels", true)
                 
                 if (hideReels) {
-                    if (url == "https://www.instagram.com/reels/" || url.contains("/reels/audio/")) {
-                         return true 
-                    }
+                    if (url == "https://www.instagram.com/reels/" || url.contains("/reels/audio/")) { return true }
                 }
                 
-                if (url.contains("instagram.com")) {
-                    return false
-                }
+                if (url.contains("instagram.com")) { return false }
                 
-                try {
-                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-                } catch (e: Exception) { }
+                try { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) } catch (e: Exception) { }
                 return true
             }
         }
 
         webView.webChromeClient = object : WebChromeClient() {
-             // Handle Popups in same WebView
             override fun onCreateWindow(view: WebView?, isDialog: Boolean, isUserGesture: Boolean, resultMsg: android.os.Message?): Boolean {
                 val transport = resultMsg?.obj as? WebView.WebViewTransport ?: return false
                 transport.webView = view
@@ -236,39 +211,24 @@ class MainActivity : AppCompatActivity() {
                 if (request == null) return
                 val resources = request.resources
                 val androidPermissions = mutableListOf<String>()
-                
-                if (resources.contains(PermissionRequest.RESOURCE_VIDEO_CAPTURE)) {
-                    androidPermissions.add(Manifest.permission.CAMERA)
-                }
-                if (resources.contains(PermissionRequest.RESOURCE_AUDIO_CAPTURE)) {
-                    androidPermissions.add(Manifest.permission.RECORD_AUDIO)
-                    androidPermissions.add(Manifest.permission.MODIFY_AUDIO_SETTINGS)
-                }
+                if (resources.contains(PermissionRequest.RESOURCE_VIDEO_CAPTURE)) { androidPermissions.add(Manifest.permission.CAMERA) }
+                if (resources.contains(PermissionRequest.RESOURCE_AUDIO_CAPTURE)) { androidPermissions.add(Manifest.permission.RECORD_AUDIO); androidPermissions.add(Manifest.permission.MODIFY_AUDIO_SETTINGS) }
 
-                val missingPermissions = androidPermissions.filter {
-                    ContextCompat.checkSelfPermission(this@MainActivity, it) != PackageManager.PERMISSION_GRANTED
-                }
-
-                if (missingPermissions.isEmpty()) {
-                    request.grant(resources)
-                } else {
+                val missingPermissions = androidPermissions.filter { ContextCompat.checkSelfPermission(this@MainActivity, it) != PackageManager.PERMISSION_GRANTED }
+                if (missingPermissions.isEmpty()) { request.grant(resources) } 
+                else {
                     pendingPermissionRequest = request
                     permissionLauncher.launch(missingPermissions.toTypedArray())
                 }
             }
             
             override fun onPermissionRequestCanceled(request: PermissionRequest?) {
-                if (pendingPermissionRequest == request) {
-                    pendingPermissionRequest = null
-                }
+                if (pendingPermissionRequest == request) { pendingPermissionRequest = null }
             }
 
             override fun onProgressChanged(view: WebView?, newProgress: Int) {
                 if (newProgress > 10) injectFilters() 
-                if (newProgress == 100) {
-                    binding.progressBar.visibility = View.GONE
-                    binding.swipeRefresh.isRefreshing = false
-                }
+                if (newProgress == 100) { binding.progressBar.visibility = View.GONE; binding.swipeRefresh.isRefreshing = false }
             }
         }
     }
@@ -296,13 +256,12 @@ class MainActivity : AppCompatActivity() {
             cssRules.append("article:has(span:contains('Sponsored')), article:has(span:contains('Sponsorisé')) { display: none !important; } ")
         }
         
-        // 🚀 FORCE MOBILE LAYOUT (CSS)
+        // Mobile Layout Force
         cssRules.append("@media (min-width: 0px) { body { --grid-numcols: 1 !important; font-size: 16px !important; } } ")
         cssRules.append("div[role='main'] { max-width: 100% !important; margin: 0 !important; } ")
         cssRules.append("nav[role='navigation'] { width: 100% !important; } ")
         cssRules.append("[class*='sidebar'], [class*='desktop'] { display: none !important; } ")
         
-        // Common cleanup & FORCE SEARCH VISIBILITY
         cssRules.append("input[type='text'], input[placeholder='Rechercher'], input[aria-label='Rechercher'] { display: block !important; opacity: 1 !important; visibility: visible !important; } ")
         cssRules.append("div[role='dialog'] { display: block !important; opacity: 1 !important; visibility: visible !important; } ")
         cssRules.append("a[href^='/name/'], a[href^='/explore/tags/'], a[href^='/explore/locations/'] { display: inline-block !important; opacity: 1 !important; visibility: visible !important; } ")
@@ -312,14 +271,13 @@ class MainActivity : AppCompatActivity() {
 
         val js = """
             (function() {
-                // 🛡️ ANTI-DETECTION (Partial): HIDE WEBVIEW
                 try {
                     Object.defineProperty(navigator, 'webdriver', { get: () => false });
                     Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
-                    // NO resolution spoofing
                 } catch(e) {}
+                
+                try { localStorage.setItem('display_version', 'mobile'); } catch(e) {}
             
-                // 0. Force Mobile Viewport
                 var meta = document.querySelector('meta[name="viewport"]');
                 if (!meta) {
                     meta = document.createElement('meta');
@@ -328,7 +286,6 @@ class MainActivity : AppCompatActivity() {
                 }
                 meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover';
                 
-                // 1. Inject Style Rule
                 var styleId = 'onyx-style';
                 var style = document.getElementById(styleId);
                 if (!style) {
@@ -338,21 +295,16 @@ class MainActivity : AppCompatActivity() {
                 }
                 style.textContent = `$safeCSS`;
                 
-                // 2. JS Cleanup Loop
                 function cleanContent() {
                      ${if (hideExplore) "var loaders = document.querySelectorAll('svg[aria-label=\"Chargement...\"], svg[aria-label=\"Loading...\"]'); loaders.forEach(l => l.style.display = 'none');" else ""}
                 }
                 
-                // 3. Setup Observer
                 if (!window.onyxObserver) {
                     cleanContent();
-                    window.onyxObserver = new MutationObserver(function(mutations) {
-                        cleanContent();
-                    });
+                    window.onyxObserver = new MutationObserver(function(mutations) { cleanContent(); });
                     window.onyxObserver.observe(document.body, { childList: true, subtree: true });
                 }
                 
-                // 4. TOUCH SHIM V2 (Pointer Events)
                 document.addEventListener('touchend', function(e) {
                     var touch = e.changedTouches[0];
                     var target = document.elementFromPoint(touch.clientX, touch.clientY);
