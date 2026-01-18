@@ -191,8 +191,9 @@ class MainActivity : AppCompatActivity() {
         webView.webViewClient = object : WebViewClient() {
             override fun onPageStarted(view: WebView?, url: String?, favicon: android.graphics.Bitmap?) {
                 super.onPageStarted(view, url, favicon)
-                // Only show progress bar if it's a significant load, not just navigation
                 binding.progressBar.visibility = View.VISIBLE
+                // Inject immediately to catch early renders
+                injectFilters()
             }
 
             override fun onPageFinished(view: WebView?, url: String?) {
@@ -204,14 +205,23 @@ class MainActivity : AppCompatActivity() {
 
             override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
                 val url = request?.url?.toString() ?: return false
+                val prefs = PreferenceManager.getDefaultSharedPreferences(this@MainActivity)
+                val hideReels = prefs.getBoolean("hide_reels", true)
+                // We do NOT block explore URL anymore, we handle it via CSS to allow search
+                // val hideExplore = prefs.getBoolean("hide_explore", true) 
                 
-                if (isReelsBlocked() && url.contains("/reels/")) {
-                    view?.loadUrl("https://www.instagram.com/")
-                    return true
+                // 1. BLOCK REELS FEED (Infinite Scroll) but ALLOW specific Reels (DMs/Saved)
+                if (hideReels) {
+                    // Block ONLY the main feed entry point
+                    if (url == "https://www.instagram.com/reels/" || url.contains("/reels/audio/")) {
+                         return true // Block
+                    }
                 }
                 
+                // 2. SMART SKIP: If we somehow end up on a blocked page (e.g. via history back), go Home
+                // (Note: shouldOverrideUrlLoading catches new navigations, for history we rely on onPageFinished check or just let it load empty)
+
                 if (url.contains("instagram.com")) {
-                    // Let WebView handle it (seamless transition)
                     return false
                 }
                 
@@ -224,38 +234,11 @@ class MainActivity : AppCompatActivity() {
 
         webView.webChromeClient = object : WebChromeClient() {
             override fun onPermissionRequest(request: PermissionRequest?) {
-                request?.let { req ->
-                    val resources = req.resources
-                    val neededPermissions = mutableListOf<String>()
-                    
-                    for (resource in resources) {
-                        when (resource) {
-                            PermissionRequest.RESOURCE_VIDEO_CAPTURE -> {
-                                if (ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.CAMERA)
-                                    != PackageManager.PERMISSION_GRANTED) {
-                                    neededPermissions.add(Manifest.permission.CAMERA)
-                                }
-                            }
-                            PermissionRequest.RESOURCE_AUDIO_CAPTURE -> {
-                                if (ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.RECORD_AUDIO)
-                                    != PackageManager.PERMISSION_GRANTED) {
-                                    neededPermissions.add(Manifest.permission.RECORD_AUDIO)
-                                }
-                            }
-                        }
-                    }
-                    
-                    if (neededPermissions.isEmpty()) {
-                        req.grant(resources)
-                    } else {
-                        permissionRequest = req
-                        permissionLauncher.launch(neededPermissions.toTypedArray())
-                    }
-                }
+                request?.grant(request.resources)
             }
 
             override fun onProgressChanged(view: WebView?, newProgress: Int) {
-                super.onProgressChanged(view, newProgress)
+                if (newProgress > 10) injectFilters()
                 if (newProgress == 100) {
                     binding.progressBar.visibility = View.GONE
                     binding.swipeRefresh.isRefreshing = false
@@ -270,70 +253,59 @@ class MainActivity : AppCompatActivity() {
         val hideExplore = prefs.getBoolean("hide_explore", true)
         val hideAds = prefs.getBoolean("hide_ads", true)
 
-        val isMessages = webView.url?.contains("/direct") == true
-        if (isMessages) return
-
         val cssRules = StringBuilder()
         
         if (hideReels) {
-            cssRules.append("a[href*=\"/reels/\"]{display:none!important;}")
-            cssRules.append("div[style*=\"reels\"]{display:none!important;}")
-            cssRules.append("svg[aria-label*=\"Reels\"]{display:none!important;}")
-            cssRules.append("a[href=\"/reels/\"]{display:none!important;}")
-            // Hide the Reels tab container specifically
-            cssRules.append("div:has(> a[href*=\"/reels/\"]){display:none!important;}")
+            // 1. Hide Reels Tab Button
+            cssRules.append("a[href='/reels/'], a[href*='/reels/'][role='link'] { display: none !important; } ")
+            // 2. Hide "Reels" section in Profile
+            cssRules.append("a[href*='/reels/'] { display: none !important; } ") 
+            // 3. Anti-Doomscroll (disable scroll on Reel pages if possible)
+            cssRules.append("div[style*='overflow-y: scroll'] > div > div > div[role='button'] { pointer-events: none !important; } ")
         }
         
         if (hideExplore) {
-            cssRules.append("a[href=\"/explore/\"]{display:none!important;}")
-            cssRules.append("a[href*=\"/explore\"]{display:none!important;}")
-             // Hide Explore tab container
-            cssRules.append("div:has(> a[href*=\"/explore/\"]){display:none!important;}")
+            // 1. STRICT BLOCKING of Feed Items (Posts & Reels)
+            cssRules.append("main[role='main'] a[href^='/p/'], main[role='main'] a[href^='/reel/'] { display: none !important; } ")
+            // 2. Hide Loaders/Spinners
+            cssRules.append("svg[aria-label='Chargement...'], svg[aria-label='Loading...'] { display: none !important; } ")
         }
         
-        // RE-LAYOUT NAVIGATION BAR
-        // Force the bottom navigation bar to distribute remaining items evenly
-        cssRules.append("div[role=\"tablist\"]{justify-content: space-evenly !important;}")
-        cssRules.append("div:has(> a[href=\"/\"]){justify-content: space-evenly !important;}")
-
         if (hideAds) {
-            cssRules.append("article:has(span[class*=\"sponsored\"]){display:none!important;}")
-            cssRules.append("article:has(span:contains(\"Sponsorisé\")){display:none!important;}")
-            cssRules.append("article:has(span:contains(\"Sponsored\")){display:none!important;}")
+            cssRules.append("article:has(span:contains('Sponsored')), article:has(span:contains('Sponsorisé')) { display: none !important; } ")
         }
-
-        // NO NAGS - Hide "Get the App" banners aggressively
-        cssRules.append("div[role=\"banner\"]{display:none!important;}")
-        cssRules.append("div:has(a[href*=\"play.google.com\"]){display:none!important;}")
-        cssRules.append("div:has(button):has(div:contains(\"Instagram\")){display:none!important;}") // Generic app upsell banner
-        cssRules.append("div:has(button:contains(\"Ouvrir\")){display:none!important;}")
-        cssRules.append("div:has(button:contains(\"Open\")){display:none!important;}")
-        cssRules.append("div:has(button:contains(\"Installer\")){display:none!important;}")
-        cssRules.append("div:has(button:contains(\"Install\")){display:none!important;}")
         
-        // Hide "Use the App" footer often found on mobile web
-        cssRules.append("footer:has(a[href*=\"play.google.com\"]){display:none!important;}")
+        // Common cleanup & FORCE SEARCH VISIBILITY
+        cssRules.append("input[type='text'], input[placeholder='Rechercher'], input[aria-label='Rechercher'] { display: block !important; opacity: 1 !important; visibility: visible !important; } ")
+        cssRules.append("div[role='dialog'] { display: block !important; opacity: 1 !important; visibility: visible !important; } ")
+        cssRules.append("a[href^='/name/'], a[href^='/explore/tags/'], a[href^='/explore/locations/'] { display: inline-block !important; opacity: 1 !important; visibility: visible !important; } ")
+        
+        cssRules.append("div[role='tablist'] { justify-content: space-evenly !important; } div[role='banner'], footer, .AppCTA { display: none !important; }")
+
+        val safeCSS = cssRules.toString().replace("`", "\\`")
 
         val js = """
             (function() {
+                // 1. Inject Style Rule
                 var styleId = 'onyx-style';
-                var existing = document.getElementById(styleId);
-                if (existing) existing.remove();
+                var style = document.getElementById(styleId);
+                if (!style) {
+                    style = document.createElement('style');
+                    style.id = styleId;
+                    document.head.appendChild(style);
+                }
+                style.textContent = `$safeCSS`;
                 
-                var style = document.createElement('style');
-                style.id = styleId;
-                style.textContent = `$cssRules`;
-                document.head.appendChild(style);
+                // 2. JS Cleanup (Backup for CSS)
+                function cleanContent() {
+                     ${if (hideExplore) "var loaders = document.querySelectorAll('svg[aria-label=\"Chargement...\"], svg[aria-label=\"Loading...\"]'); loaders.forEach(l => l.style.display = 'none');" else ""}
+                }
                 
+                // 3. Setup Observer
                 if (!window.onyxObserver) {
-                    window.onyxObserver = new MutationObserver(function() {
-                        var style = document.getElementById(styleId);
-                        if (!style) {
-                            style = document.createElement('style');
-                            style.id = styleId;
-                            style.textContent = `$cssRules`;
-                            document.head.appendChild(style);
-                        }
+                    cleanContent();
+                    window.onyxObserver = new MutationObserver(function(mutations) {
+                        cleanContent();
                     });
                     window.onyxObserver.observe(document.body, { childList: true, subtree: true });
                 }
@@ -343,10 +315,9 @@ class MainActivity : AppCompatActivity() {
         webView.evaluateJavascript(js, null)
     }
 
-    private fun isReelsBlocked(): Boolean {
-        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
-        return prefs.getBoolean("hide_reels", true)
-    }
+    private fun isReelsBlocked(): Boolean = PreferenceManager.getDefaultSharedPreferences(this).getBoolean("hide_reels", true)
+    private fun isExploreBlocked(): Boolean = PreferenceManager.getDefaultSharedPreferences(this).getBoolean("hide_explore", true)
+
 
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
