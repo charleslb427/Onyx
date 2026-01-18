@@ -59,18 +59,21 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         // ✅ RESTORE COOKIES ON LAUNCH
         CookieManager.shared.restoreCookies()
         
+        // ✅ OBSERVE BACKGROUND/TERMINATE TO SAVE COOKIES (More reliable in SwiftUI)
+        NotificationCenter.default.addObserver(forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: .main) { _ in
+            CookieManager.shared.saveCookies()
+        }
+        NotificationCenter.default.addObserver(forName: UIApplication.willTerminateNotification, object: nil, queue: .main) { _ in
+            CookieManager.shared.saveCookies()
+        }
+        // Also save when app becomes inactive (user switches apps)
+        NotificationCenter.default.addObserver(forName: UIApplication.willResignActiveNotification, object: nil, queue: .main) { _ in
+            CookieManager.shared.saveCookies()
+        }
+        
         WebSocketManager.shared.connect()
         
         return true
-    }
-    
-    // ✅ SAVE COOKIES WHEN APP GOES TO BACKGROUND
-    func applicationDidEnterBackground(_ application: UIApplication) {
-        CookieManager.shared.saveCookies()
-    }
-    
-    func applicationWillTerminate(_ application: UIApplication) {
-        CookieManager.shared.saveCookies()
     }
 
     func application(_ application: UIApplication, performFetchWithCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
