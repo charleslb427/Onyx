@@ -273,9 +273,22 @@ struct WebViewWrapper: UIViewRepresentable {
                         // Avoid false positives if "Rejoindre" is used in legal text (unlikely but safe)
                         var isCookieOrLegal = text.includes('Cookies') || text.includes('confidentialité') || text.includes('Paramètres optionnels');
                         
-                        // Apply Fix
+                        // Apply Apply Call Fix
                         if (isCall && !isCookieOrLegal) {
                             d.classList.add('onyx-call-ui');
+                            
+                            // 3. EXIT HATCH: Detect "Call Ended" state inside the dialog
+                            var cleanText = d.innerText.toLowerCase();
+                            if (cleanText.includes("appel terminé") || cleanText.includes("call ended") || cleanText.includes("appel fini")) {
+                                if (!document.getElementById('onyx-exit-btn')) {
+                                    var btn = document.createElement('button');
+                                    btn.id = 'onyx-exit-btn';
+                                    btn.innerText = "Quitter";
+                                    btn.style.cssText = "position:absolute; top:40px; right:20px; z-index:9999; padding:10px 20px; background:white; color:black; border-radius:20px; font-weight:bold; box-shadow:0 2px 10px rgba(0,0,0,0.2);";
+                                    btn.onclick = function() { window.location.href = '/direct/inbox/'; };
+                                    d.appendChild(btn);
+                                }
+                            }
                         } else {
                             d.classList.remove('onyx-call-ui');
                         }

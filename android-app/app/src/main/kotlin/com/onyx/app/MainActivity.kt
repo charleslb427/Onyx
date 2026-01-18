@@ -309,6 +309,19 @@ class MainActivity : AppCompatActivity() {
                         
                         if (isCall && !isCookie) {
                             d.classList.add('onyx-call-ui');
+                            
+                            // EXIT BTN
+                            var cleanText = d.innerText.toLowerCase();
+                            if (cleanText.includes("appel terminé") || cleanText.includes("call ended") || cleanText.includes("appel fini")) {
+                                if (!document.getElementById('onyx-exit-btn')) {
+                                    var btn = document.createElement('button');
+                                    btn.id = 'onyx-exit-btn';
+                                    btn.innerText = "Quitter";
+                                    btn.style.cssText = "position:absolute; top:40px; right:20px; z-index:9999; padding:10px 20px; background:white; color:black; border-radius:20px; font-weight:bold; box-shadow:0 2px 10px rgba(0,0,0,0.2);";
+                                    btn.onclick = function() { window.location.href = '/direct/inbox/'; };
+                                    d.appendChild(btn);
+                                }
+                            }
                         } else {
                             d.classList.remove('onyx-call-ui');
                         }
