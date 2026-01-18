@@ -11,11 +11,11 @@ struct WebViewWrapper: UIViewRepresentable {
         config.allowsInlineMediaPlayback = true
         config.allowsPictureInPictureMediaPlayback = true
         
-        // ✅ PERSISTENCE: Use SHARED process pool from AppDelegate singleton
+        // ✅ PERSISTENCE
         config.processPool = AppDelegate.shared.webViewProcessPool
         config.websiteDataStore = WKWebsiteDataStore.default()
         
-        // --- NOTIFICATION BRIDGE (Inject at start for capture) ---
+        // --- NOTIFICATION BRIDGE ---
         let notificationShimScript = """
         window.Notification = function(title, options) {
             var payload = { title: title, body: options ? (options.body || '') : '' };
@@ -42,17 +42,19 @@ struct WebViewWrapper: UIViewRepresentable {
         webView.customUserAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1"
         context.coordinator.webView = webView
         
-        if let url = URL(string: "https://www.instagram.com/") {
-            webView.load(URLRequest(url: url))
+        // ✅ RESTORE SESSION THEN LOAD
+        SessionManager.shared.restoreSession(to: webView) {
+            if let url = URL(string: "https://www.instagram.com/") {
+                webView.load(URLRequest(url: url))
+            }
         }
+        
         return webView
     }
     
     func updateUIView(_ uiView: WKWebView, context: Context) {
-        // Called when refreshTrigger changes (after Settings close)
         if context.coordinator.lastRefreshId != refreshTrigger {
             context.coordinator.lastRefreshId = refreshTrigger
-            // Reload and re-inject filters
             uiView.reload()
         }
     }
@@ -62,8 +64,8 @@ struct WebViewWrapper: UIViewRepresentable {
     class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMessageHandler {
         weak var webView: WKWebView?
         var lastRefreshId: UUID = UUID()
+        var hasInjectedLocalStorage = false
         
-        // --- NOTIFICATION HANDLER ---
         func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
             if message.name == "notificationBridge", let body = message.body as? [String: Any], let title = body["title"] as? String {
                 let text = body["body"] as? String ?? ""
@@ -86,17 +88,23 @@ struct WebViewWrapper: UIViewRepresentable {
         }
 
         // --- NAVIGATION DELEGATE ---
+        
+        // ✅ INJECT LOCALSTORAGE EARLY (before page fully renders)
+        func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+            if !hasInjectedLocalStorage {
+                SessionManager.shared.injectLocalStorage(to: webView)
+                hasInjectedLocalStorage = true
+            }
+        }
+        
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
             webView.scrollView.refreshControl?.endRefreshing()
             injectFilters(into: webView)
+            
+            // ✅ SAVE SESSION AFTER PAGE LOADS (to capture new tokens)
+            SessionManager.shared.saveSession(from: webView)
         }
         
-        func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
-            // Inject early during page load as well
-            injectFilters(into: webView)
-        }
-        
-        // Block navigation to Reels/Explore if settings say so
         func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
             guard let url = navigationAction.request.url?.absoluteString else {
                 decisionHandler(.allow)
@@ -120,7 +128,6 @@ struct WebViewWrapper: UIViewRepresentable {
             decisionHandler(.grant)
         }
 
-        // --- DYNAMIC CSS INJECTION (Reads settings LIVE) ---
         func injectFilters(into webView: WKWebView) {
             let defaults = UserDefaults.standard
             let hideReels = defaults.bool(forKey: "hideReels")
@@ -139,7 +146,6 @@ struct WebViewWrapper: UIViewRepresentable {
             }
             css += "div[role='tablist'] { justify-content: space-evenly !important; } div[role='banner'], footer, .AppCTA { display: none !important; }"
             
-            // Escape backticks for JS template literal
             let safeCSS = css.replacingOccurrences(of: "`", with: "\\`")
             
             let js = """

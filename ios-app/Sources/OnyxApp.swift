@@ -56,20 +56,8 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
             "hideAds": true
         ])
         
-        // ✅ RESTORE COOKIES ON LAUNCH
-        CookieManager.shared.restoreCookies()
-        
-        // ✅ OBSERVE BACKGROUND/TERMINATE TO SAVE COOKIES (More reliable in SwiftUI)
-        NotificationCenter.default.addObserver(forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: .main) { _ in
-            CookieManager.shared.saveCookies()
-        }
-        NotificationCenter.default.addObserver(forName: UIApplication.willTerminateNotification, object: nil, queue: .main) { _ in
-            CookieManager.shared.saveCookies()
-        }
-        // Also save when app becomes inactive (user switches apps)
-        NotificationCenter.default.addObserver(forName: UIApplication.willResignActiveNotification, object: nil, queue: .main) { _ in
-            CookieManager.shared.saveCookies()
-        }
+        // Session is now managed by WebView.swift via SessionManager
+        // (Cookies + localStorage saved on page load, restored on app start)
         
         WebSocketManager.shared.connect()
         
