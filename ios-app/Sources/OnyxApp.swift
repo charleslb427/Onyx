@@ -2,6 +2,7 @@
 import SwiftUI
 import UserNotifications
 import BackgroundTasks
+import WebKit
 
 @main
 struct OnyxApp: App {
@@ -37,7 +38,13 @@ struct OnyxApp: App {
 
 class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     
+    // ✅ SINGLETON PROCESS POOL (Persists cookies across app restarts)
+    static var shared: AppDelegate!
+    let webViewProcessPool = WKProcessPool()
+    
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
+        
+        AppDelegate.shared = self  // Set singleton reference
         
         UNUserNotificationCenter.current().delegate = self
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { _, _ in }
