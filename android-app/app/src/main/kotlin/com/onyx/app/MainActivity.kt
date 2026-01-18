@@ -185,7 +185,12 @@ class MainActivity : AppCompatActivity() {
             mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
             mediaPlaybackRequiresUserGesture = false
             javaScriptCanOpenWindowsAutomatically = true
-                        // Smooth Rendering
+            
+            // 🥸 User Agent Spoofing (Crucial for Calls/Voice Msgs)
+            // We mimic a modern Chrome on Android to ensure Insta enables WebRTC features
+            userAgentString = "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
+            
+            // Smooth Rendering
             setRenderPriority(WebSettings.RenderPriority.HIGH)
         }
 
