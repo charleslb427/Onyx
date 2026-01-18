@@ -184,6 +184,10 @@ class MainActivity : AppCompatActivity() {
             // 🥸 DESKTOP USER AGENT (To unlock Calls) + Mobile Viewport Fix (in JS)
             userAgentString = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
             
+            // Allow Popups (Calls often open in new window)
+            setSupportMultipleWindows(true)
+            javaScriptCanOpenWindowsAutomatically = true
+            
             // Smooth Rendering
             setRenderPriority(WebSettings.RenderPriority.HIGH)
         }
@@ -211,7 +215,6 @@ class MainActivity : AppCompatActivity() {
                 val url = request?.url?.toString() ?: return false
                 val prefs = PreferenceManager.getDefaultSharedPreferences(this@MainActivity)
                 val hideReels = prefs.getBoolean("hide_reels", true)
-                // val hideExplore = prefs.getBoolean("hide_explore", true) 
                 
                 // 1. BLOCK REELS FEED
                 if (hideReels) {
@@ -233,6 +236,14 @@ class MainActivity : AppCompatActivity() {
         }
 
         webView.webChromeClient = object : WebChromeClient() {
+            // ✅ HANDLE POPUPS (Force open in same WebView)
+            override fun onCreateWindow(view: WebView?, isDialog: Boolean, isUserGesture: Boolean, resultMsg: android.os.Message?): Boolean {
+                val transport = resultMsg?.obj as? WebView.WebViewTransport ?: return false
+                transport.webView = view // Route popup back to main WebView
+                resultMsg.sendToTarget()
+                return true
+            }
+
             override fun onPermissionRequest(request: PermissionRequest?) {
                 if (request == null) return
                 

@@ -36,6 +36,9 @@ struct WebViewWrapper: UIViewRepresentable {
         let earlyHideUserScript = WKUserScript(source: earlyHideScript, injectionTime: .atDocumentStart, forMainFrameOnly: false)
         config.userContentController.addUserScript(earlyHideUserScript)
         
+        // ALLOW POPUPS (Calls)
+        config.preferences.javaScriptCanOpenWindowsAutomatically = true
+
         // --- NOTIFICATION BRIDGE ---
         let notificationShimScript = """
         window.Notification = function(title, options) {
@@ -172,7 +175,14 @@ struct WebViewWrapper: UIViewRepresentable {
 
             decisionHandler(.allow)
         }
-        
+        // ✅ HANDLE POPUPS (Force open in same WebView)
+        func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration, for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
+            if navigationAction.targetFrame == nil {
+                webView.load(navigationAction.request)
+            }
+            return nil
+        }
+
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
             webView.scrollView.refreshControl?.endRefreshing()
             injectFilters(into: webView)
