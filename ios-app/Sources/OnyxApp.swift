@@ -38,34 +38,42 @@ struct OnyxApp: App {
 
 class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     
-    // ✅ SINGLETON PROCESS POOL (Persists cookies across app restarts)
     static var shared: AppDelegate!
     let webViewProcessPool = WKProcessPool()
     
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
         
-        AppDelegate.shared = self  // Set singleton reference
+        AppDelegate.shared = self
         
         UNUserNotificationCenter.current().delegate = self
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { _, _ in }
         application.registerForRemoteNotifications()
         UIApplication.shared.setMinimumBackgroundFetchInterval(UIApplication.backgroundFetchIntervalMinimum)
         
-        // SET DEFAULTS (First Launch)
         UserDefaults.standard.register(defaults: [
             "hideReels": true,
             "hideExplore": true,
             "hideAds": true
         ])
         
-        // Start WebSocket Listener (Requires external server)
+        // ✅ RESTORE COOKIES ON LAUNCH
+        CookieManager.shared.restoreCookies()
+        
         WebSocketManager.shared.connect()
         
         return true
     }
+    
+    // ✅ SAVE COOKIES WHEN APP GOES TO BACKGROUND
+    func applicationDidEnterBackground(_ application: UIApplication) {
+        CookieManager.shared.saveCookies()
+    }
+    
+    func applicationWillTerminate(_ application: UIApplication) {
+        CookieManager.shared.saveCookies()
+    }
 
     func application(_ application: UIApplication, performFetchWithCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
-        print("Background Fetch")
         completionHandler(.newData)
     }
 
