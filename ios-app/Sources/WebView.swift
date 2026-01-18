@@ -207,13 +207,16 @@ struct WebViewWrapper: UIViewRepresentable {
             // Common cleanup
             // Ensure inputs and Search Results (often in a dialog or container) are visible
             css += "input[type='text'], input[placeholder='Rechercher'], input[aria-label='Rechercher'] { display: block !important; opacity: 1 !important; visibility: visible !important; }"
-            css += "div[role='dialog'] { display: block !important; opacity: 1 !important; visibility: visible !important; } " // Search often opens in dialog
+            css += "div[role='dialog'] { display: block !important; opacity: 1 !important; visibility: visible !important; } "
             css += "div[role='tablist'] { justify-content: space-evenly !important; } div[role='banner'], footer, .AppCTA { display: none !important; }"
             
             let safeCSS = css.replacingOccurrences(of: "`", with: "\\`")
             
+            // ✅ MUTATION OBSERVER SCRIPT
+            // This actively watches for new content loaded by scrolling/interaction and hides it
             let js = """
             (function() {
+                // 1. Inject Style Rule
                 var styleId = 'onyx-style';
                 var style = document.getElementById(styleId);
                 if (!style) {
@@ -222,6 +225,21 @@ struct WebViewWrapper: UIViewRepresentable {
                     document.head.appendChild(style);
                 }
                 style.textContent = `\(safeCSS)`;
+                
+                // 2. Define removal function
+                function cleanContent() {
+                    // Try to remove standard loading spinners if Explore is hidden
+                    \(hideExplore ? "var loaders = document.querySelectorAll('svg[aria-label=\"Chargement...\"], svg[aria-label=\"Loading...\"]'); loaders.forEach(l => l.style.display = 'none');" : "")
+                }
+                
+                // 3. Setup Observer
+                if (!window.onyxObserver) {
+                    cleanContent();
+                    window.onyxObserver = new MutationObserver(function(mutations) {
+                        cleanContent();
+                    });
+                    window.onyxObserver.observe(document.body, { childList: true, subtree: true });
+                }
             })();
             """
             webView.evaluateJavaScript(js, completionHandler: nil)
