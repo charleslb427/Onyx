@@ -187,16 +187,14 @@ struct WebViewWrapper: UIViewRepresentable {
             }
             
             if hideExplore {
-                // 1. Hide Explore Tab (Optional, if you want search only via direct link, but user wants Search)
-                // Actually keep the tab visible if user wants to search? 
-                // User said: "block suggestions grid... so I can use search".
-                // Search is usually on the Explore page. So we MUST NOT hide the tab `a[href='/explore/']`.
+                // 1. Target the specific GRID items on Explore, not the main container
+                // Hide any link to a post or reel within the main area
+                css += "main[role='main'] a[href^='/p/'], main[role='main'] a[href^='/reel/'] { display: none !important; } "
                 
-                // 2. Hide the GRID of suggestions (Loop over div structure)
-                // This targets the main grid container on the explore page
-                css += "main[role='main'] > div > div:not(:first-child) { display: none !important; } "
-                // Backup selector for grid items
-                css += "div:has(> a[href^='/p/']), div:has(> a[href^='/reel/']) { display: none !important; } "
+                // 2. Hide specific grid containers to remove whitespace/loaders if possible
+                // Be careful not to hide the Search container at the top
+                // Search usually is in a nav or top div, main grid is below
+                css += "main[role='main'] > div > div:nth-child(n+2) { display: none !important; } "
             }
             
             if hideAds {
@@ -204,6 +202,8 @@ struct WebViewWrapper: UIViewRepresentable {
             }
             
             // Common cleanup
+            // Ensure inputs are visible!
+            css += "input[type='text'], input[placeholder='Rechercher'], input[aria-label='Rechercher'] { display: block !important; opacity: 1 !important; visibility: visible !important; }"
             css += "div[role='tablist'] { justify-content: space-evenly !important; } div[role='banner'], footer, .AppCTA { display: none !important; }"
             
             let safeCSS = css.replacingOccurrences(of: "`", with: "\\`")
