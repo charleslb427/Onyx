@@ -44,8 +44,8 @@ struct WebViewWrapper: UIViewRepresentable {
         let webView = WKWebView(frame: .zero, configuration: config)
         webView.navigationDelegate = context.coordinator
         webView.uiDelegate = context.coordinator
-        // ✅ DISABLED to prevent white screen when swiping at home
-        webView.allowsBackForwardNavigationGestures = false
+        // ✅ RE-ENABLED for Instagram swipe navigation
+        webView.allowsBackForwardNavigationGestures = true
         
         // Pull to Refresh
         let refreshControl = UIRefreshControl()
@@ -121,17 +121,31 @@ struct WebViewWrapper: UIViewRepresentable {
         }
         
         func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
-            guard let url = navigationAction.request.url?.absoluteString else {
+            guard let url = navigationAction.request.url else {
                 decisionHandler(.allow)
                 return
             }
             
-            let defaults = UserDefaults.standard
-            if defaults.bool(forKey: "hideReels") && url.contains("/reels/") {
+            let urlString = url.absoluteString
+            
+            // Block navigation to blank pages (prevents white screen on swipe back at home)
+            if urlString == "about:blank" || urlString.isEmpty {
                 decisionHandler(.cancel)
                 return
             }
-            if defaults.bool(forKey: "hideExplore") && url.contains("/explore/") {
+            
+            // Block non-Instagram URLs from swipe back (force stay on Instagram)
+            if !urlString.contains("instagram.com") && navigationAction.navigationType == .backForward {
+                decisionHandler(.cancel)
+                return
+            }
+            
+            let defaults = UserDefaults.standard
+            if defaults.bool(forKey: "hideReels") && urlString.contains("/reels/") {
+                decisionHandler(.cancel)
+                return
+            }
+            if defaults.bool(forKey: "hideExplore") && urlString.contains("/explore/") {
                 decisionHandler(.cancel)
                 return
             }
