@@ -28,8 +28,6 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var webView: WebView
-    
-    // Hold the WebView permission request while asking user
     private var pendingPermissionRequest: PermissionRequest? = null
 
     private val permissionLauncher = registerForActivityResult(
@@ -37,13 +35,11 @@ class MainActivity : AppCompatActivity() {
     ) { permissions ->
         val allGranted = permissions.values.all { it }
         if (allGranted) {
-            // User granted Android permissions -> Grant WebView permissions
             pendingPermissionRequest?.let { request ->
                 request.grant(request.resources)
                 pendingPermissionRequest = null
             }
         } else {
-            // User denied -> Deny WebView
             pendingPermissionRequest?.deny()
             pendingPermissionRequest = null
             Toast.makeText(this, "Permissions requises pour les appels", Toast.LENGTH_SHORT).show()
@@ -54,16 +50,12 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        
-        // Remove default ActionBar if present (theme should handle it but just in case)
         supportActionBar?.hide()
 
         setupNotifications()
         setupWebView()
         setupSwipeRefresh()
         setupFab()
-        
-        // Check if opened from notification
         handleIntent(intent)
     }
 
@@ -82,7 +74,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // 🛡️ STEALTH HEADERS MAP
     private fun getHeaders(): Map<String, String> {
         return mapOf(
             "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -109,7 +100,6 @@ class MainActivity : AppCompatActivity() {
     private fun setupFab() {
         binding.fabSettings.setImageResource(R.drawable.ic_settings_fab)
         binding.fabSettings.setOnClickListener {
-            // Direct access to settings, seamless experience
             startActivity(Intent(this, SettingsActivity::class.java))
         }
     }
@@ -154,9 +144,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun checkNotificationListenerPermission() {
-        val componentName = ComponentName(this, InstagramNotificationListener::class.java)
         val enabledListeners = NotificationManagerCompat.getEnabledListenerPackages(this)
-        
         if (!enabledListeners.contains(packageName)) {
             // Let user find it in settings
         }
@@ -165,11 +153,8 @@ class MainActivity : AppCompatActivity() {
     @SuppressLint("SetJavaScriptEnabled")
     private fun setupWebView() {
         webView = binding.webView
-
-        // 🚀 PERFORMANCE OPTIMIZATIONS
         webView.setLayerType(View.LAYER_TYPE_HARDWARE, null)
         
-        // Enable Third Party Cookies
         val cookieManager = CookieManager.getInstance()
         cookieManager.setAcceptCookie(true)
         cookieManager.setAcceptThirdPartyCookies(webView, true)
@@ -178,18 +163,14 @@ class MainActivity : AppCompatActivity() {
             javaScriptEnabled = true
             domStorageEnabled = true
             databaseEnabled = true
-            
-            // ⚡ Cache & Network
             cacheMode = WebSettings.LOAD_DEFAULT 
             
-            // Viewport & Zoom
             loadWithOverviewMode = true
             useWideViewPort = true
             setSupportZoom(true)
             builtInZoomControls = true
             displayZoomControls = false
             
-            // 📱 Mobile Interactions
             mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
             mediaPlaybackRequiresUserGesture = false
             javaScriptCanOpenWindowsAutomatically = true
@@ -197,15 +178,12 @@ class MainActivity : AppCompatActivity() {
             // 🥸 DESKTOP USER AGENT (To unlock Calls) + Mobile Viewport Fix (in JS)
             userAgentString = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
             
-            // Allow Popups (Calls often open in new window)
+            // Allow Popups
             setSupportMultipleWindows(true)
             javaScriptCanOpenWindowsAutomatically = true
-            
-            // Smooth Rendering
             setRenderPriority(WebSettings.RenderPriority.HIGH)
         }
 
-        // Optimize Scrollbar
         webView.isVerticalScrollBarEnabled = false 
         webView.isHorizontalScrollBarEnabled = false
         
@@ -213,7 +191,6 @@ class MainActivity : AppCompatActivity() {
             override fun onPageStarted(view: WebView?, url: String?, favicon: android.graphics.Bitmap?) {
                 super.onPageStarted(view, url, favicon)
                 binding.progressBar.visibility = View.VISIBLE
-                // Inject immediately to catch early renders
                 injectFilters()
             }
 
@@ -229,14 +206,12 @@ class MainActivity : AppCompatActivity() {
                 val prefs = PreferenceManager.getDefaultSharedPreferences(this@MainActivity)
                 val hideReels = prefs.getBoolean("hide_reels", true)
                 
-                // 1. BLOCK REELS FEED
                 if (hideReels) {
                     if (url == "https://www.instagram.com/reels/" || url.contains("/reels/audio/")) {
-                         return true // Block
+                         return true 
                     }
                 }
                 
-                // 2. SMART SKIP
                 if (url.contains("instagram.com")) {
                     return false
                 }
@@ -249,21 +224,19 @@ class MainActivity : AppCompatActivity() {
         }
 
         webView.webChromeClient = object : WebChromeClient() {
-            // ✅ HANDLE POPUPS (Force open in same WebView)
+             // Handle Popups in same WebView
             override fun onCreateWindow(view: WebView?, isDialog: Boolean, isUserGesture: Boolean, resultMsg: android.os.Message?): Boolean {
                 val transport = resultMsg?.obj as? WebView.WebViewTransport ?: return false
-                transport.webView = view // Route popup back to main WebView
+                transport.webView = view
                 resultMsg.sendToTarget()
                 return true
             }
 
             override fun onPermissionRequest(request: PermissionRequest?) {
                 if (request == null) return
-                
                 val resources = request.resources
                 val androidPermissions = mutableListOf<String>()
                 
-                // Map Web resources to Android Permissions
                 if (resources.contains(PermissionRequest.RESOURCE_VIDEO_CAPTURE)) {
                     androidPermissions.add(Manifest.permission.CAMERA)
                 }
@@ -272,16 +245,13 @@ class MainActivity : AppCompatActivity() {
                     androidPermissions.add(Manifest.permission.MODIFY_AUDIO_SETTINGS)
                 }
 
-                // Check if we already have them
                 val missingPermissions = androidPermissions.filter {
                     ContextCompat.checkSelfPermission(this@MainActivity, it) != PackageManager.PERMISSION_GRANTED
                 }
 
                 if (missingPermissions.isEmpty()) {
-                    // Already have everything, grant to WebView
-                    request.grant(request.resources)
+                    request.grant(resources)
                 } else {
-                    // We need to ask the user first
                     pendingPermissionRequest = request
                     permissionLauncher.launch(missingPermissions.toTypedArray())
                 }
@@ -326,35 +296,37 @@ class MainActivity : AppCompatActivity() {
             cssRules.append("article:has(span:contains('Sponsored')), article:has(span:contains('Sponsorisé')) { display: none !important; } ")
         }
         
+        // 🚀 FORCE MOBILE LAYOUT (CSS)
+        cssRules.append("@media (min-width: 0px) { body { --grid-numcols: 1 !important; font-size: 16px !important; } } ")
+        cssRules.append("div[role='main'] { max-width: 100% !important; margin: 0 !important; } ")
+        cssRules.append("nav[role='navigation'] { width: 100% !important; } ")
+        cssRules.append("[class*='sidebar'], [class*='desktop'] { display: none !important; } ")
+        
         // Common cleanup & FORCE SEARCH VISIBILITY
         cssRules.append("input[type='text'], input[placeholder='Rechercher'], input[aria-label='Rechercher'] { display: block !important; opacity: 1 !important; visibility: visible !important; } ")
         cssRules.append("div[role='dialog'] { display: block !important; opacity: 1 !important; visibility: visible !important; } ")
         cssRules.append("a[href^='/name/'], a[href^='/explore/tags/'], a[href^='/explore/locations/'] { display: inline-block !important; opacity: 1 !important; visibility: visible !important; } ")
-        
         cssRules.append("div[role='tablist'] { justify-content: space-evenly !important; } div[role='banner'], footer, .AppCTA { display: none !important; }")
 
         val safeCSS = cssRules.toString().replace("`", "\\`")
 
         val js = """
             (function() {
-                // 🛡️ ANTI-DETECTION: HIDE WEBVIEW & FAKE DESKTOP SCREEN
+                // 🛡️ ANTI-DETECTION (Partial): HIDE WEBVIEW
                 try {
                     Object.defineProperty(navigator, 'webdriver', { get: () => false });
                     Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
-                    Object.defineProperty(window, 'innerWidth', { get: () => 1920 });
-                    Object.defineProperty(window, 'innerHeight', { get: () => 1080 });
-                    Object.defineProperty(screen, 'width', { get: () => 1920 });
-                    Object.defineProperty(screen, 'height', { get: () => 1080 });
+                    // NO resolution spoofing
                 } catch(e) {}
             
-                // 0. Force Mobile Viewport (Vital for Desktop UA on Mobile)
+                // 0. Force Mobile Viewport
                 var meta = document.querySelector('meta[name="viewport"]');
                 if (!meta) {
                     meta = document.createElement('meta');
                     meta.name = 'viewport';
                     document.head.appendChild(meta);
                 }
-                meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+                meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover';
                 
                 // 1. Inject Style Rule
                 var styleId = 'onyx-style';
@@ -380,7 +352,7 @@ class MainActivity : AppCompatActivity() {
                     window.onyxObserver.observe(document.body, { childList: true, subtree: true });
                 }
                 
-                // 4. TOUCH SHIM (Vital for Desktop Mode)
+                // 4. TOUCH SHIM V2 (Pointer Events)
                 document.addEventListener('touchend', function(e) {
                     var touch = e.changedTouches[0];
                     var target = document.elementFromPoint(touch.clientX, touch.clientY);
@@ -388,9 +360,12 @@ class MainActivity : AppCompatActivity() {
                     if (clickable) {
                         var opts = {
                             view: window, bubbles: true, cancelable: true,
-                            clientX: touch.clientX, clientY: touch.clientY, screenX: touch.screenX, screenY: touch.screenY
+                            clientX: touch.clientX, clientY: touch.clientY, screenX: touch.screenX, screenY: touch.screenY,
+                            pointerType: 'touch', isPrimary: true
                         };
+                        clickable.dispatchEvent(new PointerEvent('pointerdown', opts));
                         clickable.dispatchEvent(new MouseEvent('mousedown', opts));
+                        clickable.dispatchEvent(new PointerEvent('pointerup', opts));
                         clickable.dispatchEvent(new MouseEvent('mouseup', opts));
                         clickable.dispatchEvent(new MouseEvent('click', opts));
                     }
@@ -401,11 +376,6 @@ class MainActivity : AppCompatActivity() {
         webView.evaluateJavascript(js, null)
     }
 
-    private fun isReelsBlocked(): Boolean = PreferenceManager.getDefaultSharedPreferences(this).getBoolean("hide_reels", true)
-    private fun isExploreBlocked(): Boolean = PreferenceManager.getDefaultSharedPreferences(this).getBoolean("hide_explore", true)
-
-
-    @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
         if (webView.canGoBack()) {
             webView.goBack()

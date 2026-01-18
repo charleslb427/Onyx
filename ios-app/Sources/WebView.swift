@@ -32,15 +32,12 @@ struct WebViewWrapper: UIViewRepresentable {
                 });
             } catch(e) {}
             
-            // 3. 🛡️ ANTI-DETECTION: HIDE WEBVIEW & FAKE DESKTOP SCREEN
-            // This tricks Instagram stealth checks that disable calls in WebViews
+            // 3. 🛡️ ANTI-DETECTION (Partial): HIDE WEBVIEW
+            // Tricks Instagram stealth checks
             try {
                 Object.defineProperty(navigator, 'webdriver', { get: () => false });
                 Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
-                Object.defineProperty(window, 'innerWidth', { get: () => 1920 });
-                Object.defineProperty(window, 'innerHeight', { get: () => 1080 });
-                Object.defineProperty(screen, 'width', { get: () => 1920 });
-                Object.defineProperty(screen, 'height', { get: () => 1080 });
+                // NOTE: We do NOT spoof window.innerWidth here anymore to allow responsive UI
             } catch(e) {}
         })();
         """
@@ -67,8 +64,6 @@ struct WebViewWrapper: UIViewRepresentable {
         let webView = WKWebView(frame: .zero, configuration: config)
         webView.navigationDelegate = context.coordinator
         webView.uiDelegate = context.coordinator
-        
-        // ... (rest of configuration) ...
         
         // ✅ START DISABLED - will be enabled dynamically when there's history
         webView.allowsBackForwardNavigationGestures = false
@@ -118,7 +113,6 @@ struct WebViewWrapper: UIViewRepresentable {
         
         override init() {
             super.init()
-            // ✅ AUTO SAVE on App Background/Close to prevent data loss
             NotificationCenter.default.addObserver(self, selector: #selector(saveSessionNow), name: UIApplication.willResignActiveNotification, object: nil)
             NotificationCenter.default.addObserver(self, selector: #selector(saveSessionNow), name: UIApplication.willTerminateNotification, object: nil)
         }
@@ -150,35 +144,29 @@ struct WebViewWrapper: UIViewRepresentable {
             webView?.reload()
         }
 
-        // --- NAVIGATION DELEGATE ---
+        // --- NAVIGATION ---
         
-        // ✅ INJECT LOCALSTORAGE + FILTERS EARLY (before page fully renders)
         func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
             if !hasInjectedLocalStorage {
                 SessionManager.shared.injectLocalStorage(to: webView)
                 hasInjectedLocalStorage = true
             }
-            // Inject filters early to reduce flash
             injectFilters(into: webView)
         }
         
-        // ✅ DYNAMIC SWIPE & NAV LOGIC
         func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
             guard let url = navigationAction.request.url else {
                 decisionHandler(.allow)
                 return
             }
-            
             let urlString = url.absoluteString
             let defaults = UserDefaults.standard
             
-            // 1. BLOCK BLANK/EMPTY
             if urlString == "about:blank" || urlString.isEmpty {
                 decisionHandler(.cancel)
                 return
             }
             
-            // 2. BLOCK REELS FEED (Infinite Scroll) but ALLOW specific Reels (DMs/Saved)
             if defaults.bool(forKey: "hideReels") {
                 if urlString == "https://www.instagram.com/reels/" || urlString.contains("/reels/audio/") {
                      decisionHandler(.cancel)
@@ -186,7 +174,6 @@ struct WebViewWrapper: UIViewRepresentable {
                 }
             }
             
-            // 3. PREVENT SWIPE BACK TO LOGIN (Fix accidental logout)
             let isBackForward = navigationAction.navigationType == .backForward
             if isBackForward && (urlString.contains("/accounts/login") || urlString.contains("/accounts/emailsignup")) {
                 decisionHandler(.cancel)
@@ -195,6 +182,7 @@ struct WebViewWrapper: UIViewRepresentable {
 
             decisionHandler(.allow)
         }
+        
         // ✅ HANDLE POPUPS (Force open in same WebView)
         func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration, for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
             if navigationAction.targetFrame == nil {
@@ -207,12 +195,9 @@ struct WebViewWrapper: UIViewRepresentable {
             webView.scrollView.refreshControl?.endRefreshing()
             injectFilters(into: webView)
             
-            // ✅ SMART SWIPE CONTROL
-            // Fix White Screen: Strictly disable swipe BACK if we are on Home
             if let url = webView.url?.absoluteString, url == "https://www.instagram.com/" {
                 webView.allowsBackForwardNavigationGestures = false
             } else {
-                // Otherwise only enable if valid history exists
                 webView.allowsBackForwardNavigationGestures = webView.canGoBack
             }
             
@@ -233,18 +218,13 @@ struct WebViewWrapper: UIViewRepresentable {
             var css = ""
             
             if hideReels {
-                // 1. Hide Reels Tab Button
                 css += "a[href='/reels/'], a[href*='/reels/'][role='link'] { display: none !important; } "
-                // 2. Hide "Reels" section in Profile
                 css += "a[href*='/reels/'] { display: none !important; } " 
-                // 3. Anti-Doomscroll
                 css += "div[style*='overflow-y: scroll'] > div > div > div[role='button'] { pointer-events: none !important; } "
             }
             
             if hideExplore {
-                // 1. STRICT BLOCKING of Feed Items (Posts & Reels)
                 css += "main[role='main'] a[href^='/p/'], main[role='main'] a[href^='/reel/'] { display: none !important; } "
-                // 2. Hide Loaders/Spinners
                 css += "svg[aria-label='Chargement...'], svg[aria-label='Loading...'] { display: none !important; } "
             }
             
@@ -252,16 +232,23 @@ struct WebViewWrapper: UIViewRepresentable {
                 css += "article:has(span:contains('Sponsored')), article:has(span:contains('Sponsorisé')) { display: none !important; } "
             }
             
-            // FORCE SEARCH VISIBILITY
+            // 🚀 FORCE MOBILE LAYOUT (CSS) for Desktop UA
+            css += """
+                 @media (min-width: 0px) { body { --grid-numcols: 1 !important; font-size: 16px !important; } }
+                 div[role="main"] { max-width: 100% !important; margin: 0 !important; }
+                 nav[role="navigation"] { width: 100% !important; }
+                 [class*="sidebar"], [class*="desktop"] { display: none !important; }
+            """
+            
+            // Common cleanup & FORCE SEARCH VISIBILITY
             css += "input[type='text'], input[placeholder='Rechercher'], input[aria-label='Rechercher'] { display: block !important; opacity: 1 !important; visibility: visible !important; }"
             css += "div[role='dialog'] { display: block !important; opacity: 1 !important; visibility: visible !important; } "
             css += "a[href^='/name/'], a[href^='/explore/tags/'], a[href^='/explore/locations/'] { display: inline-block !important; opacity: 1 !important; visibility: visible !important; }"
-            
             css += "div[role='tablist'] { justify-content: space-evenly !important; } div[role='banner'], footer, .AppCTA { display: none !important; }"
             
             let safeCSS = css.replacingOccurrences(of: "`", with: "\\`")
             
-            // ✅ MUTATION OBSERVER & VIEWPORT FIX (Force Mobile Scale on Desktop UA)
+            // ✅ MUTATION OBSERVER & TOUCH SHIM V2
             let js = """
             (function() {
                 // 0. Force Mobile Viewport (Vital for Desktop UA on Mobile)
@@ -271,7 +258,7 @@ struct WebViewWrapper: UIViewRepresentable {
                     meta.name = 'viewport';
                     document.head.appendChild(meta);
                 }
-                meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+                meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover';
                 
                 // 1. Inject Style Rule
                 var styleId = 'onyx-style';
@@ -297,20 +284,20 @@ struct WebViewWrapper: UIViewRepresentable {
                     window.onyxObserver.observe(document.body, { childList: true, subtree: true });
                 }
                 
-                // 4. TOUCH SHIM (Vital for Desktop Mode on Mobile)
-                // Forces a 'click' event when touching buttons, as Desktop site might ignore touch
+                // 4. TOUCH SHIM V2 (Pointer Events Support)
                 document.addEventListener('touchend', function(e) {
                     var touch = e.changedTouches[0];
                     var target = document.elementFromPoint(touch.clientX, touch.clientY);
-                    // Find closest clickable element
-                    var clickable = target.closest('button, [role="button"], a, svg');
+                    var clickable = target ? target.closest('button, [role="button"], a, svg') : null;
                     if (clickable) {
-                        // Dispatch synthetic Mouse Events
                         var opts = {
                             view: window, bubbles: true, cancelable: true,
-                            clientX: touch.clientX, clientY: touch.clientY, screenX: touch.screenX, screenY: touch.screenY
+                            clientX: touch.clientX, clientY: touch.clientY, screenX: touch.screenX, screenY: touch.screenY,
+                            pointerType: 'touch', isPrimary: true
                         };
+                        clickable.dispatchEvent(new PointerEvent('pointerdown', opts));
                         clickable.dispatchEvent(new MouseEvent('mousedown', opts));
+                        clickable.dispatchEvent(new PointerEvent('pointerup', opts));
                         clickable.dispatchEvent(new MouseEvent('mouseup', opts));
                         clickable.dispatchEvent(new MouseEvent('click', opts));
                     }
