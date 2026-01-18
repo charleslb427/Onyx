@@ -101,8 +101,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // Menu logic removed as requested (simplified UX)
-
     private fun createNotificationChannels() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val notificationManager = getSystemService(NotificationManager::class.java)
@@ -147,8 +145,7 @@ class MainActivity : AppCompatActivity() {
         val enabledListeners = NotificationManagerCompat.getEnabledListenerPackages(this)
         
         if (!enabledListeners.contains(packageName)) {
-            // First run? We could show a dialog, but let's be less intrusive and let user find it in settings
-            // Or show a small snackbar/toast if needed. Use SettingsActivity to toggle.
+            // Let user find it in settings
         }
     }
 
@@ -157,9 +154,9 @@ class MainActivity : AppCompatActivity() {
         webView = binding.webView
 
         // 🚀 PERFORMANCE OPTIMIZATIONS
-        webView.setLayerType(View.LAYER_TYPE_HARDWARE, null) // Force Hardware Acceleration
+        webView.setLayerType(View.LAYER_TYPE_HARDWARE, null)
         
-        // Enable Third Party Cookies (Crucial for Instagram's auth & caching)
+        // Enable Third Party Cookies
         val cookieManager = CookieManager.getInstance()
         cookieManager.setAcceptCookie(true)
         cookieManager.setAcceptThirdPartyCookies(webView, true)
@@ -171,8 +168,6 @@ class MainActivity : AppCompatActivity() {
             
             // ⚡ Cache & Network
             cacheMode = WebSettings.LOAD_DEFAULT 
-            // We use LOAD_DEFAULT so it uses network when needed but cache when available.
-            // Avoid LOAD_CACHE_ELSE_NETWORK as it might break dynamic feeds.
             
             // Viewport & Zoom
             loadWithOverviewMode = true
@@ -186,16 +181,15 @@ class MainActivity : AppCompatActivity() {
             mediaPlaybackRequiresUserGesture = false
             javaScriptCanOpenWindowsAutomatically = true
             
-            // 🥸 User Agent Spoofing (TABLET MODE)
-            // Trying to force Tablet UI to unlock Calls/Voice Messages
-            userAgentString = "Mozilla/5.0 (Linux; Android 13; SM-X800) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
+            // 🥸 DESKTOP USER AGENT (To unlock Calls) + Mobile Viewport Fix (in JS)
+            userAgentString = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
             
             // Smooth Rendering
             setRenderPriority(WebSettings.RenderPriority.HIGH)
         }
 
         // Optimize Scrollbar
-        webView.isVerticalScrollBarEnabled = false // Hide scrollbar for cleaner look
+        webView.isVerticalScrollBarEnabled = false 
         webView.isHorizontalScrollBarEnabled = false
         
         webView.webViewClient = object : WebViewClient() {
@@ -217,20 +211,16 @@ class MainActivity : AppCompatActivity() {
                 val url = request?.url?.toString() ?: return false
                 val prefs = PreferenceManager.getDefaultSharedPreferences(this@MainActivity)
                 val hideReels = prefs.getBoolean("hide_reels", true)
-                // We do NOT block explore URL anymore, we handle it via CSS to allow search
                 // val hideExplore = prefs.getBoolean("hide_explore", true) 
                 
-                // 1. BLOCK REELS FEED (Infinite Scroll) but ALLOW specific Reels (DMs/Saved)
+                // 1. BLOCK REELS FEED
                 if (hideReels) {
-                    // Block ONLY the main feed entry point
                     if (url == "https://www.instagram.com/reels/" || url.contains("/reels/audio/")) {
                          return true // Block
                     }
                 }
                 
-                // 2. SMART SKIP: If we somehow end up on a blocked page (e.g. via history back), go Home
-                // (Note: shouldOverrideUrlLoading catches new navigations, for history we rely on onPageFinished check or just let it load empty)
-
+                // 2. SMART SKIP
                 if (url.contains("instagram.com")) {
                     return false
                 }
@@ -249,6 +239,7 @@ class MainActivity : AppCompatActivity() {
                 val resources = request.resources
                 val androidPermissions = mutableListOf<String>()
                 
+                // Map Web resources to Android Permissions
                 if (resources.contains(PermissionRequest.RESOURCE_VIDEO_CAPTURE)) {
                     androidPermissions.add(Manifest.permission.CAMERA)
                 }
@@ -257,18 +248,21 @@ class MainActivity : AppCompatActivity() {
                     androidPermissions.add(Manifest.permission.MODIFY_AUDIO_SETTINGS)
                 }
 
+                // Check if we already have them
                 val missingPermissions = androidPermissions.filter {
                     ContextCompat.checkSelfPermission(this@MainActivity, it) != PackageManager.PERMISSION_GRANTED
                 }
 
                 if (missingPermissions.isEmpty()) {
-                    request.grant(resources)
+                    // Already have everything, grant to WebView
+                    request.grant(request.resources)
                 } else {
+                    // We need to ask the user first
                     pendingPermissionRequest = request
                     permissionLauncher.launch(missingPermissions.toTypedArray())
                 }
             }
-
+            
             override fun onPermissionRequestCanceled(request: PermissionRequest?) {
                 if (pendingPermissionRequest == request) {
                     pendingPermissionRequest = null
@@ -276,7 +270,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             override fun onProgressChanged(view: WebView?, newProgress: Int) {
-                if (newProgress > 10) injectFilters()
+                if (newProgress > 10) injectFilters() 
                 if (newProgress == 100) {
                     binding.progressBar.visibility = View.GONE
                     binding.swipeRefresh.isRefreshing = false
@@ -294,18 +288,13 @@ class MainActivity : AppCompatActivity() {
         val cssRules = StringBuilder()
         
         if (hideReels) {
-            // 1. Hide Reels Tab Button
             cssRules.append("a[href='/reels/'], a[href*='/reels/'][role='link'] { display: none !important; } ")
-            // 2. Hide "Reels" section in Profile
             cssRules.append("a[href*='/reels/'] { display: none !important; } ") 
-            // 3. Anti-Doomscroll (disable scroll on Reel pages if possible)
             cssRules.append("div[style*='overflow-y: scroll'] > div > div > div[role='button'] { pointer-events: none !important; } ")
         }
         
         if (hideExplore) {
-            // 1. STRICT BLOCKING of Feed Items (Posts & Reels)
             cssRules.append("main[role='main'] a[href^='/p/'], main[role='main'] a[href^='/reel/'] { display: none !important; } ")
-            // 2. Hide Loaders/Spinners
             cssRules.append("svg[aria-label='Chargement...'], svg[aria-label='Loading...'] { display: none !important; } ")
         }
         
@@ -324,6 +313,15 @@ class MainActivity : AppCompatActivity() {
 
         val js = """
             (function() {
+                // 0. Force Mobile Viewport (Vital for Desktop UA on Mobile)
+                var meta = document.querySelector('meta[name="viewport"]');
+                if (!meta) {
+                    meta = document.createElement('meta');
+                    meta.name = 'viewport';
+                    document.head.appendChild(meta);
+                }
+                meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+                
                 // 1. Inject Style Rule
                 var styleId = 'onyx-style';
                 var style = document.getElementById(styleId);
@@ -334,7 +332,7 @@ class MainActivity : AppCompatActivity() {
                 }
                 style.textContent = `$safeCSS`;
                 
-                // 2. JS Cleanup (Backup for CSS)
+                // 2. JS Cleanup Loop
                 function cleanContent() {
                      ${if (hideExplore) "var loaders = document.querySelectorAll('svg[aria-label=\"Chargement...\"], svg[aria-label=\"Loading...\"]'); loaders.forEach(l => l.style.display = 'none');" else ""}
                 }

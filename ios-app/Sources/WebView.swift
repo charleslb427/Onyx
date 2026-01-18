@@ -21,10 +21,11 @@ struct WebViewWrapper: UIViewRepresentable {
             // 1. Hide Elements Flash
             var style = document.createElement('style');
             style.id = 'onyx-early-hide';
+            // Initially hide potentially blocked content to reduce flash
             style.textContent = 'a[href*="/reels/"], a[href="/reels/"], a[href="/explore/"], a[href*="/explore"], div[role="banner"], footer { opacity: 0 !important; transition: opacity 0.1s; }';
             document.documentElement.appendChild(style);
             
-            // 2. Spoof PWA Standalone Mode (Unlock Features?)
+            // 2. Spoof PWA Standalone Mode (Attempt to unlock PWA features)
             try {
                 Object.defineProperty(window.navigator, 'standalone', {
                     get: function() { return true; }
@@ -34,15 +35,6 @@ struct WebViewWrapper: UIViewRepresentable {
         """
         let earlyHideUserScript = WKUserScript(source: earlyHideScript, injectionTime: .atDocumentStart, forMainFrameOnly: false)
         config.userContentController.addUserScript(earlyHideUserScript)
-        
-        // --- SAVE SESSION ON BACKGROUND ---
-        // We add an observer here or in Coordinator to save when user leaves
-        NotificationCenter.default.addObserver(forName: UIApplication.willResignActiveNotification, object: nil, queue: .main) { _ in
-            // This is tricky inside makeUIView, better handled in Coordinator context or via specific save call
-             // Actually, we can't easily access the webview instance here to save.
-             // We'll delegate this to the Coordinator via the Notification bridge or a global reference?
-             // Simplest: The Coordinator observes it.
-        }
         
         // --- NOTIFICATION BRIDGE ---
         let notificationShimScript = """
@@ -61,6 +53,7 @@ struct WebViewWrapper: UIViewRepresentable {
         let webView = WKWebView(frame: .zero, configuration: config)
         webView.navigationDelegate = context.coordinator
         webView.uiDelegate = context.coordinator
+        
         // ✅ START DISABLED - will be enabled dynamically when there's history
         webView.allowsBackForwardNavigationGestures = false
         
@@ -69,9 +62,11 @@ struct WebViewWrapper: UIViewRepresentable {
         refreshControl.addTarget(context.coordinator, action: #selector(Coordinator.handleRefresh), for: .valueChanged)
         webView.scrollView.refreshControl = refreshControl
         
-        // Update UA to iPad (Tablet) to try unlocking Calls/Voice Msg
-        // "Macintosh" often forces desktop site (too small), iPad is the best balance.
-        webView.customUserAgent = "Mozilla/5.0 (iPad; CPU OS 17_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Mobile/15E148 Safari/604.1"
+        // 🖥️ DESKTOP UA with MOBILE SPOOFING
+        // We use a Desktop User Agent to unlock Calls/Voice Messages (which are hidden on Mobile Web)
+        // AND we inject a viewport meta tag via JS (in injectFilters) to force it to render like a mobile app.
+        webView.customUserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15"
+        
         context.coordinator.webView = webView
         
         // ✅ RESTORE SESSION THEN LOAD
@@ -210,37 +205,24 @@ struct WebViewWrapper: UIViewRepresentable {
             if hideReels {
                 // 1. Hide Reels Tab Button
                 css += "a[href='/reels/'], a[href*='/reels/'][role='link'] { display: none !important; } "
-                
                 // 2. Hide "Reels" section in Profile
                 css += "a[href*='/reels/'] { display: none !important; } " 
-                
-                // 3. Try to disable scroll on Reel pages (Anti-Doomscroll)
-                // This targets the specific container often used for the feed
+                // 3. Anti-Doomscroll
                 css += "div[style*='overflow-y: scroll'] > div > div > div[role='button'] { pointer-events: none !important; } "
             }
             
             if hideExplore {
                 // 1. STRICT BLOCKING of Feed Items (Posts & Reels)
-                // We target links to specific content.
-                // Search results (Users, Hashtags) are safely ignored as they don't start with /p/ or /reel/
                 css += "main[role='main'] a[href^='/p/'], main[role='main'] a[href^='/reel/'] { display: none !important; } "
-                
                 // 2. Hide Loaders/Spinners
-                // If the feed is empty, Insta might show a loader. Hide it.
                 css += "svg[aria-label='Chargement...'], svg[aria-label='Loading...'] { display: none !important; } "
-                
-                // 3. Hide the div that typically holds the grid to collapse whitespace
-                // (Only if it strictly contains posts, avoiding search containers)
-                // css += "div:has(> a[href^='/p/']) { display: none !important; }" // Too risky for now, stick to item hiding
             }
             
             if hideAds {
                 css += "article:has(span:contains('Sponsored')), article:has(span:contains('Sponsorisé')) { display: none !important; } "
             }
             
-            // Common cleanup
             // FORCE SEARCH VISIBILITY
-            // Inputs, Dialogs (Results), and Links to Users/Tags must be visible
             css += "input[type='text'], input[placeholder='Rechercher'], input[aria-label='Rechercher'] { display: block !important; opacity: 1 !important; visibility: visible !important; }"
             css += "div[role='dialog'] { display: block !important; opacity: 1 !important; visibility: visible !important; } "
             css += "a[href^='/name/'], a[href^='/explore/tags/'], a[href^='/explore/locations/'] { display: inline-block !important; opacity: 1 !important; visibility: visible !important; }"
@@ -249,10 +231,18 @@ struct WebViewWrapper: UIViewRepresentable {
             
             let safeCSS = css.replacingOccurrences(of: "`", with: "\\`")
             
-            // ✅ MUTATION OBSERVER SCRIPT
-            // This actively watches for new content loaded by scrolling/interaction and hides it
+            // ✅ MUTATION OBSERVER & VIEWPORT FIX (Force Mobile Scale on Desktop UA)
             let js = """
             (function() {
+                // 0. Force Mobile Viewport (Vital for Desktop UA on Mobile)
+                var meta = document.querySelector('meta[name="viewport"]');
+                if (!meta) {
+                    meta = document.createElement('meta');
+                    meta.name = 'viewport';
+                    document.head.appendChild(meta);
+                }
+                meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+                
                 // 1. Inject Style Rule
                 var styleId = 'onyx-style';
                 var style = document.getElementById(styleId);
@@ -263,9 +253,9 @@ struct WebViewWrapper: UIViewRepresentable {
                 }
                 style.textContent = `\(safeCSS)`;
                 
-                // 2. JS Cleanup (Backup for CSS)
+                // 2. JS Cleanup Loop
                 function cleanContent() {
-                    \(hideExplore ? "var loaders = document.querySelectorAll('svg[aria-label=\"Chargement...\"], svg[aria-label=\"Loading...\"]'); loaders.forEach(l => l.style.display = 'none');" : "")
+                     \(hideExplore ? "var loaders = document.querySelectorAll('svg[aria-label=\"Chargement...\"], svg[aria-label=\"Loading...\"]'); loaders.forEach(l => l.style.display = 'none');" : "")
                 }
                 
                 // 3. Setup Observer
