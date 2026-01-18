@@ -130,28 +130,40 @@ struct WebViewWrapper: UIViewRepresentable {
             }
             
             let urlString = url.absoluteString
+            let defaults = UserDefaults.standard
+            let isBackForward = navigationAction.navigationType == .backForward
             
-            // Block navigation to blank pages (prevents white screen on swipe back at home)
+            // Block blank pages
             if urlString == "about:blank" || urlString.isEmpty {
                 decisionHandler(.cancel)
                 return
             }
             
-            // Block non-Instagram URLs from swipe back (force stay on Instagram)
-            if !urlString.contains("instagram.com") && navigationAction.navigationType == .backForward {
+            // Block non-Instagram on back/forward
+            if !urlString.contains("instagram.com") && isBackForward {
                 decisionHandler(.cancel)
                 return
             }
             
-            let defaults = UserDefaults.standard
-            if defaults.bool(forKey: "hideReels") && urlString.contains("/reels/") {
+            // Check if this is a blocked page
+            let isReelsBlocked = defaults.bool(forKey: "hideReels") && urlString.contains("/reels/")
+            let isExploreBlocked = defaults.bool(forKey: "hideExplore") && urlString.contains("/explore/")
+            
+            if isReelsBlocked || isExploreBlocked {
                 decisionHandler(.cancel)
+                
+                // If it was a back/forward action, try to skip over the blocked page
+                if isBackForward {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        // Go to home instead of getting stuck
+                        if let homeURL = URL(string: "https://www.instagram.com/") {
+                            webView.load(URLRequest(url: homeURL))
+                        }
+                    }
+                }
                 return
             }
-            if defaults.bool(forKey: "hideExplore") && urlString.contains("/explore/") {
-                decisionHandler(.cancel)
-                return
-            }
+            
             decisionHandler(.allow)
         }
         
