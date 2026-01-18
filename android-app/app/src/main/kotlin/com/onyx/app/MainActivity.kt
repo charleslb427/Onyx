@@ -296,12 +296,18 @@ class MainActivity : AppCompatActivity() {
                 function cleanContent() {
                      ${if (hideExplore) "var loaders = document.querySelectorAll('svg[aria-label=\"Chargement...\"], svg[aria-label=\"Loading...\"]'); loaders.forEach(l => l.style.display = 'none');" else ""}
                      
-                     // DETECT CALL
+                     // DETECT CALL (Lobby + Active)
                      var dialogs = document.querySelectorAll('div[role="dialog"]');
                      dialogs.forEach(d => {
-                        var isCall = d.querySelector('video') || d.querySelector('button svg') || d.querySelector('button[aria-label*="Micro"]');
-                        var hasText = d.innerText && (d.innerText.length > 50 || d.innerText.includes('Cookies') || d.innerText.includes('confidentialité'));
-                        if (isCall && !hasText) {
+                        var text = d.innerText || "";
+                        var hasMedia = d.querySelector('video') || d.querySelector('audio');
+                        var hasCallButtons = d.querySelector('button svg') || d.querySelector('button[aria-label*="Micro"]');
+                        var isLobby = text.includes("Rejoindre") || text.includes("Join") || text.includes("Prêt") || text.includes("Ready");
+                        
+                        var isCall = hasMedia || hasCallButtons || isLobby;
+                        var isCookie = text.includes('Cookies') || text.includes('confidentialité');
+                        
+                        if (isCall && !isCookie) {
                             d.classList.add('onyx-call-ui');
                         } else {
                             d.classList.remove('onyx-call-ui');

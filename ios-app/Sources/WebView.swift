@@ -254,16 +254,27 @@ struct WebViewWrapper: UIViewRepresentable {
                 function cleanContent() {
                      \(defaults.bool(forKey: "hideExplore") ? "var loaders = document.querySelectorAll('svg[aria-label=\"Chargement...\"], svg[aria-label=\"Loading...\"]'); loaders.forEach(l => l.style.display = 'none');" : "")
                      
-                     // 🕵️ DETECT CALL DIALOG vs COOKIE DIALOG
+                     // 🕵️ DETECT CALL DIALOG (Active Call OR Pre-Call Lobby) vs COOKIE DIALOG
                      var dialogs = document.querySelectorAll('div[role="dialog"]');
                      dialogs.forEach(d => {
-                        // Check if it's a call (mic, cam, video)
-                        var isCall = d.querySelector('video') || d.querySelector('button svg') || d.querySelector('button[aria-label*="Micro"]');
-                        // Check if it's Cookies/Text/Legal
-                        var hasText = d.innerText && (d.innerText.length > 50 || d.innerText.includes('Cookies') || d.innerText.includes('confidentialité'));
+                        var text = d.innerText || "";
                         
-                        // Apply Call Fix ONLY if it looks like a call and NOT a text popup
-                        if (isCall && !hasText) {
+                        // 1. IS IT A CALL?
+                        // - Contains video/audio elements
+                        // - OR Contains mic/cam buttons
+                        // - OR Contains LOBBY Keywords ("Rejoindre l'appel", "Join call", "Ready to join")
+                        var hasMedia = d.querySelector('video') || d.querySelector('audio');
+                        var hasCallButtons = d.querySelector('button svg') || d.querySelector('button[aria-label*="Micro"]');
+                        var isLobby = text.includes("Rejoindre") || text.includes("Join") || text.includes("Prêt") || text.includes("Ready");
+                        
+                        var isCall = hasMedia || hasCallButtons || isLobby;
+                        
+                        // 2. IS IT JUST TEXT/COOKIES?
+                        // Avoid false positives if "Rejoindre" is used in legal text (unlikely but safe)
+                        var isCookieOrLegal = text.includes('Cookies') || text.includes('confidentialité') || text.includes('Paramètres optionnels');
+                        
+                        // Apply Fix
+                        if (isCall && !isCookieOrLegal) {
                             d.classList.add('onyx-call-ui');
                         } else {
                             d.classList.remove('onyx-call-ui');
