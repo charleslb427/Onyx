@@ -31,6 +31,17 @@ struct WebViewWrapper: UIViewRepresentable {
                     get: function() { return true; }
                 });
             } catch(e) {}
+            
+            // 3. 🛡️ ANTI-DETECTION: HIDE WEBVIEW & FAKE DESKTOP SCREEN
+            // This tricks Instagram stealth checks that disable calls in WebViews
+            try {
+                Object.defineProperty(navigator, 'webdriver', { get: () => false });
+                Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
+                Object.defineProperty(window, 'innerWidth', { get: () => 1920 });
+                Object.defineProperty(window, 'innerHeight', { get: () => 1080 });
+                Object.defineProperty(screen, 'width', { get: () => 1920 });
+                Object.defineProperty(screen, 'height', { get: () => 1080 });
+            } catch(e) {}
         })();
         """
         let earlyHideUserScript = WKUserScript(source: earlyHideScript, injectionTime: .atDocumentStart, forMainFrameOnly: false)
@@ -57,6 +68,8 @@ struct WebViewWrapper: UIViewRepresentable {
         webView.navigationDelegate = context.coordinator
         webView.uiDelegate = context.coordinator
         
+        // ... (rest of configuration) ...
+        
         // ✅ START DISABLED - will be enabled dynamically when there's history
         webView.allowsBackForwardNavigationGestures = false
         
@@ -66,16 +79,23 @@ struct WebViewWrapper: UIViewRepresentable {
         webView.scrollView.refreshControl = refreshControl
         
         // 🖥️ DESKTOP UA with MOBILE SPOOFING
-        // We use a Desktop User Agent to unlock Calls/Voice Messages (which are hidden on Mobile Web)
-        // AND we inject a viewport meta tag via JS (in injectFilters) to force it to render like a mobile app.
         webView.customUserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15"
         
         context.coordinator.webView = webView
         
-        // ✅ RESTORE SESSION THEN LOAD
+        // ✅ RESTORE SESSION THEN LOAD WITH HEADERS
         SessionManager.shared.restoreSession(to: webView) {
             if let url = URL(string: "https://www.instagram.com/") {
-                webView.load(URLRequest(url: url))
+                var request = URLRequest(url: url)
+                // 🛡️ STEALTH HEADERS
+                request.setValue("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15", forHTTPHeaderField: "User-Agent")
+                request.setValue("https://www.instagram.com", forHTTPHeaderField: "Referer")
+                request.setValue("en-US,en;q=0.9", forHTTPHeaderField: "Accept-Language")
+                request.setValue("document", forHTTPHeaderField: "Sec-Fetch-Dest")
+                request.setValue("navigate", forHTTPHeaderField: "Sec-Fetch-Mode")
+                request.setValue("none", forHTTPHeaderField: "Sec-Fetch-Site")
+                
+                webView.load(request)
             }
         }
         

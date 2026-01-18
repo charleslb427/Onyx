@@ -74,11 +74,24 @@ class MainActivity : AppCompatActivity() {
 
     private fun handleIntent(intent: Intent) {
         val targetUrl = intent.getStringExtra("target_url")
+        val headers = getHeaders()
         if (targetUrl != null) {
-            webView.loadUrl(targetUrl)
+            webView.loadUrl(targetUrl, headers)
         } else if (webView.url == null) {
-             webView.loadUrl("https://www.instagram.com/")
+             webView.loadUrl("https://www.instagram.com/", headers)
         }
+    }
+
+    // 🛡️ STEALTH HEADERS MAP
+    private fun getHeaders(): Map<String, String> {
+        return mapOf(
+            "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Referer" to "https://www.instagram.com/",
+            "Accept-Language" to "en-US,en;q=0.9",
+            "Sec-Fetch-Dest" to "document",
+            "Sec-Fetch-Mode" to "navigate",
+            "Sec-Fetch-Site" to "none"
+        )
     }
 
     private fun setupNotifications() {
@@ -324,6 +337,16 @@ class MainActivity : AppCompatActivity() {
 
         val js = """
             (function() {
+                // 🛡️ ANTI-DETECTION: HIDE WEBVIEW & FAKE DESKTOP SCREEN
+                try {
+                    Object.defineProperty(navigator, 'webdriver', { get: () => false });
+                    Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
+                    Object.defineProperty(window, 'innerWidth', { get: () => 1920 });
+                    Object.defineProperty(window, 'innerHeight', { get: () => 1080 });
+                    Object.defineProperty(screen, 'width', { get: () => 1920 });
+                    Object.defineProperty(screen, 'height', { get: () => 1080 });
+                } catch(e) {}
+            
                 // 0. Force Mobile Viewport (Vital for Desktop UA on Mobile)
                 var meta = document.querySelector('meta[name="viewport"]');
                 if (!meta) {
