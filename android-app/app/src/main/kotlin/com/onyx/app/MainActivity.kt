@@ -29,20 +29,25 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var webView: WebView
     
-    // Permission request for WebRTC (camera/mic)
-    private var permissionRequest: PermissionRequest? = null
+    // Hold the WebView permission request while asking user
+    private var pendingPermissionRequest: PermissionRequest? = null
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
-        val allGranted = permissions.entries.all { it.value }
+        val allGranted = permissions.values.all { it }
         if (allGranted) {
-            permissionRequest?.grant(permissionRequest?.resources)
+            // User granted Android permissions -> Grant WebView permissions
+            pendingPermissionRequest?.let { request ->
+                request.grant(request.resources)
+                pendingPermissionRequest = null
+            }
         } else {
-            permissionRequest?.deny()
+            // User denied -> Deny WebView
+            pendingPermissionRequest?.deny()
+            pendingPermissionRequest = null
             Toast.makeText(this, "Permissions requises pour les appels", Toast.LENGTH_SHORT).show()
         }
-        permissionRequest = null
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -234,7 +239,35 @@ class MainActivity : AppCompatActivity() {
 
         webView.webChromeClient = object : WebChromeClient() {
             override fun onPermissionRequest(request: PermissionRequest?) {
-                request?.grant(request.resources)
+                if (request == null) return
+                
+                val resources = request.resources
+                val androidPermissions = mutableListOf<String>()
+                
+                if (resources.contains(PermissionRequest.RESOURCE_VIDEO_CAPTURE)) {
+                    androidPermissions.add(Manifest.permission.CAMERA)
+                }
+                if (resources.contains(PermissionRequest.RESOURCE_AUDIO_CAPTURE)) {
+                    androidPermissions.add(Manifest.permission.RECORD_AUDIO)
+                    androidPermissions.add(Manifest.permission.MODIFY_AUDIO_SETTINGS)
+                }
+
+                val missingPermissions = androidPermissions.filter {
+                    ContextCompat.checkSelfPermission(this@MainActivity, it) != PackageManager.PERMISSION_GRANTED
+                }
+
+                if (missingPermissions.isEmpty()) {
+                    request.grant(resources)
+                } else {
+                    pendingPermissionRequest = request
+                    permissionLauncher.launch(missingPermissions.toTypedArray())
+                }
+            }
+
+            override fun onPermissionRequestCanceled(request: PermissionRequest?) {
+                if (pendingPermissionRequest == request) {
+                    pendingPermissionRequest = null
+                }
             }
 
             override fun onProgressChanged(view: WebView?, newProgress: Int) {
