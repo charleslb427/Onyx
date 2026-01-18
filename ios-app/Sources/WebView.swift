@@ -15,17 +15,34 @@ struct WebViewWrapper: UIViewRepresentable {
         config.processPool = AppDelegate.shared.webViewProcessPool
         config.websiteDataStore = WKWebsiteDataStore.default()
         
-        // --- EARLY CSS INJECTION (Reduces flash when loading) ---
+        // --- EARLY CSS INJECTION & SPOOFING ---
         let earlyHideScript = """
         (function() {
+            // 1. Hide Elements Flash
             var style = document.createElement('style');
             style.id = 'onyx-early-hide';
             style.textContent = 'a[href*="/reels/"], a[href="/reels/"], a[href="/explore/"], a[href*="/explore"], div[role="banner"], footer { opacity: 0 !important; transition: opacity 0.1s; }';
             document.documentElement.appendChild(style);
+            
+            // 2. Spoof PWA Standalone Mode (Unlock Features?)
+            try {
+                Object.defineProperty(window.navigator, 'standalone', {
+                    get: function() { return true; }
+                });
+            } catch(e) {}
         })();
         """
         let earlyHideUserScript = WKUserScript(source: earlyHideScript, injectionTime: .atDocumentStart, forMainFrameOnly: false)
         config.userContentController.addUserScript(earlyHideUserScript)
+        
+        // --- SAVE SESSION ON BACKGROUND ---
+        // We add an observer here or in Coordinator to save when user leaves
+        NotificationCenter.default.addObserver(forName: UIApplication.willResignActiveNotification, object: nil, queue: .main) { _ in
+            // This is tricky inside makeUIView, better handled in Coordinator context or via specific save call
+             // Actually, we can't easily access the webview instance here to save.
+             // We'll delegate this to the Coordinator via the Notification bridge or a global reference?
+             // Simplest: The Coordinator observes it.
+        }
         
         // --- NOTIFICATION BRIDGE ---
         let notificationShimScript = """
@@ -80,6 +97,19 @@ struct WebViewWrapper: UIViewRepresentable {
         var lastRefreshId: UUID = UUID()
         var hasInjectedLocalStorage = false
         
+        override init() {
+            super.init()
+            // ✅ AUTO SAVE on App Background/Close to prevent data loss
+            NotificationCenter.default.addObserver(self, selector: #selector(saveSessionNow), name: UIApplication.willResignActiveNotification, object: nil)
+            NotificationCenter.default.addObserver(self, selector: #selector(saveSessionNow), name: UIApplication.willTerminateNotification, object: nil)
+        }
+        
+        @objc func saveSessionNow() {
+            guard let wv = webView else { return }
+            print("💾 Saving session before background/close...")
+            SessionManager.shared.saveSession(from: wv)
+        }
+        
         func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
             if message.name == "notificationBridge", let body = message.body as? [String: Any], let title = body["title"] as? String {
                 let text = body["body"] as? String ?? ""
@@ -130,17 +160,17 @@ struct WebViewWrapper: UIViewRepresentable {
             }
             
             // 2. BLOCK REELS FEED (Infinite Scroll) but ALLOW specific Reels (DMs/Saved)
-            // The main feed is usually /reels/ or /reels/audio/...
-            // Specific reels are /reels/C7k... (ID)
-            // Strategy: Block strict /reels/ URL, but rely on CSS to remove the button.
-            // If user somehow gets to the main feed, we block it.
             if defaults.bool(forKey: "hideReels") {
-                // Block ONLY the main feed entry point, allow ids (longer urls)
-                // "https://www.instagram.com/reels/" -> exact match or with query params
                 if urlString == "https://www.instagram.com/reels/" || urlString.contains("/reels/audio/") {
                      decisionHandler(.cancel)
                      return
                 }
+            }
+            
+            // 3. PREVENT SWIPE BACK TO LOGIN (Fix accidental logout)
+            if isBackForward && (urlString.contains("/accounts/login") || urlString.contains("/accounts/emailsignup")) {
+                decisionHandler(.cancel)
+                return
             }
 
             decisionHandler(.allow)
