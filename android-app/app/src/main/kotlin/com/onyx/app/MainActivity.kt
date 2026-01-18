@@ -149,7 +149,7 @@ class MainActivity : AppCompatActivity() {
             
             loadWithOverviewMode = true
             useWideViewPort = true
-            setSupportZoom(true) // Enable zoom for call UI
+            setSupportZoom(true)
             builtInZoomControls = true
             displayZoomControls = false
             
@@ -258,13 +258,11 @@ class MainActivity : AppCompatActivity() {
         cssRules.append("nav[role='navigation'] { width: 100% !important; } ")
         cssRules.append("[class*='sidebar'], [class*='desktop'] { display: none !important; } ")
         
-        // 📞 CALL UI MAGIC FIX (Scale Down)
-        cssRules.append("div[role='dialog'] { width: 100vw !important; height: 100vh !important; left: 0 !important; top: 0 !important; transform: scale(0.6) !important; transform-origin: top left !important; } ")
-        cssRules.append("div[role='dialog'] > div { width: 166% !important; height: 166% !important; } ") // Compensate Scale (1/0.6 approx 1.66)
-        
-        // Fix Buttons
-        cssRules.append("div[role='dialog'] div:has(button) { bottom: 20px !important; max-width: 100% !important; flex-wrap: wrap !important; justify-content: center !important; gap: 10px !important; } ")
-        cssRules.append("div[role='dialog'] button { transform: scale(1.2); margin: 5px !important; } ")
+        // 📞 CALL UI MAGIC: Conditional Class
+        cssRules.append(".onyx-call-ui { width: 100vw !important; height: 100vh !important; left: 0 !important; top: 0 !important; transform: scale(0.6) !important; transform-origin: top left !important; } ")
+        cssRules.append(".onyx-call-ui > div { width: 166% !important; height: 166% !important; } ")
+        cssRules.append(".onyx-call-ui div:has(button) { bottom: 20px !important; max-width: 100% !important; flex-wrap: wrap !important; justify-content: center !important; gap: 10px !important; } ")
+        cssRules.append(".onyx-call-ui button { transform: scale(1.2); margin: 5px !important; } ")
         
         cssRules.append("input[type='text'], input[placeholder='Rechercher'], input[aria-label='Rechercher'] { display: block !important; opacity: 1 !important; visibility: visible !important; } ")
         cssRules.append("div[role='dialog'] { display: block !important; opacity: 1 !important; visibility: visible !important; } ")
@@ -275,11 +273,7 @@ class MainActivity : AppCompatActivity() {
 
         val js = """
             (function() {
-                try {
-                    Object.defineProperty(navigator, 'webdriver', { get: () => false });
-                    Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
-                } catch(e) {}
-                
+                try { Object.defineProperty(navigator, 'webdriver', { get: () => false }); Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] }); } catch(e) {}
                 try { localStorage.setItem('display_version', 'mobile'); } catch(e) {}
             
                 var meta = document.querySelector('meta[name="viewport"]');
@@ -288,7 +282,6 @@ class MainActivity : AppCompatActivity() {
                     meta.name = 'viewport';
                     document.head.appendChild(meta);
                 }
-                // ALLOW ZOOM: user-scalable=yes + max-scale 5.0
                 meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover';
                 
                 var styleId = 'onyx-style';
@@ -302,6 +295,18 @@ class MainActivity : AppCompatActivity() {
                 
                 function cleanContent() {
                      ${if (hideExplore) "var loaders = document.querySelectorAll('svg[aria-label=\"Chargement...\"], svg[aria-label=\"Loading...\"]'); loaders.forEach(l => l.style.display = 'none');" else ""}
+                     
+                     // DETECT CALL
+                     var dialogs = document.querySelectorAll('div[role="dialog"]');
+                     dialogs.forEach(d => {
+                        var isCall = d.querySelector('video') || d.querySelector('button svg') || d.querySelector('button[aria-label*="Micro"]');
+                        var hasText = d.innerText && (d.innerText.length > 50 || d.innerText.includes('Cookies') || d.innerText.includes('confidentialité'));
+                        if (isCall && !hasText) {
+                            d.classList.add('onyx-call-ui');
+                        } else {
+                            d.classList.remove('onyx-call-ui');
+                        }
+                     });
                 }
                 
                 if (!window.onyxObserver) {

@@ -23,6 +23,7 @@ struct WebViewWrapper: UIViewRepresentable {
         config.processPool = AppDelegate.shared.webViewProcessPool
         config.websiteDataStore = WKWebsiteDataStore.default()
         
+        // --- EARLY CONFIG ---
         let earlyHideScript = """
         (function() {
             var style = document.createElement('style');
@@ -30,20 +31,9 @@ struct WebViewWrapper: UIViewRepresentable {
             style.textContent = 'a[href*="/reels/"], a[href="/reels/"], a[href="/explore/"], a[href*="/explore"], div[role="banner"], footer { opacity: 0 !important; transition: opacity 0.1s; }';
             document.documentElement.appendChild(style);
             
-            try {
-                Object.defineProperty(window.navigator, 'standalone', { get: function() { return true; } });
-            } catch(e) {}
-            
-            // 🛡️ ANTI-DETECTION
-            try {
-                Object.defineProperty(navigator, 'webdriver', { get: () => false });
-                Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
-            } catch(e) {}
-            
-            // 🚀 HINT MOBILE VERSION (New Trick)
-            try {
-                 localStorage.setItem('display_version', 'mobile');
-            } catch(e) {}
+            try { Object.defineProperty(window.navigator, 'standalone', { get: function() { return true; } }); } catch(e) {}
+            try { Object.defineProperty(navigator, 'webdriver', { get: () => false }); Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] }); } catch(e) {}
+            try { localStorage.setItem('display_version', 'mobile'); } catch(e) {}
         })();
         """
         let earlyHideUserScript = WKUserScript(source: earlyHideScript, injectionTime: .atDocumentStart, forMainFrameOnly: false)
@@ -82,7 +72,6 @@ struct WebViewWrapper: UIViewRepresentable {
         SessionManager.shared.restoreSession(to: webView) {
             if let url = URL(string: "https://www.instagram.com/") {
                 var request = URLRequest(url: url)
-                // 🛡️ FULL STEALTH HEADERS
                 request.setValue("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15", forHTTPHeaderField: "User-Agent")
                 request.setValue("https://www.instagram.com", forHTTPHeaderField: "Referer")
                 request.setValue("en-US,en;q=0.9", forHTTPHeaderField: "Accept-Language")
@@ -155,38 +144,23 @@ struct WebViewWrapper: UIViewRepresentable {
         }
         
         func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
-            guard let url = navigationAction.request.url else {
-                decisionHandler(.allow)
-                return
-            }
+            guard let url = navigationAction.request.url else { decisionHandler(.allow); return }
             let urlString = url.absoluteString
-            let defaults = UserDefaults.standard
             
-            if urlString == "about:blank" || urlString.isEmpty {
-                decisionHandler(.cancel)
-                return
-            }
+            if urlString == "about:blank" || urlString.isEmpty { decisionHandler(.cancel); return }
             
-            if defaults.bool(forKey: "hideReels") {
-                if urlString == "https://www.instagram.com/reels/" || urlString.contains("/reels/audio/") {
-                     decisionHandler(.cancel)
-                     return
-                }
+            if UserDefaults.standard.bool(forKey: "hideReels") {
+                if urlString == "https://www.instagram.com/reels/" || urlString.contains("/reels/audio/") { decisionHandler(.cancel); return }
             }
             
             let isBackForward = navigationAction.navigationType == .backForward
-            if isBackForward && (urlString.contains("/accounts/login") || urlString.contains("/accounts/emailsignup")) {
-                decisionHandler(.cancel)
-                return
-            }
+            if isBackForward && (urlString.contains("/accounts/login") || urlString.contains("/accounts/emailsignup")) { decisionHandler(.cancel); return }
 
             decisionHandler(.allow)
         }
         
         func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration, for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
-            if navigationAction.targetFrame == nil {
-                webView.load(navigationAction.request)
-            }
+            if navigationAction.targetFrame == nil { webView.load(navigationAction.request) }
             return nil
         }
 
@@ -199,7 +173,6 @@ struct WebViewWrapper: UIViewRepresentable {
             } else {
                 webView.allowsBackForwardNavigationGestures = webView.canGoBack
             }
-            
             SessionManager.shared.saveSession(from: webView)
         }
         
@@ -210,24 +183,18 @@ struct WebViewWrapper: UIViewRepresentable {
 
         func injectFilters(into webView: WKWebView) {
             let defaults = UserDefaults.standard
-            let hideReels = defaults.bool(forKey: "hideReels")
-            let hideExplore = defaults.bool(forKey: "hideExplore")
-            let hideAds = defaults.bool(forKey: "hideAds")
             
             var css = ""
-            
-            if hideReels {
+            if defaults.bool(forKey: "hideReels") {
                 css += "a[href='/reels/'], a[href*='/reels/'][role='link'] { display: none !important; } "
                 css += "a[href*='/reels/'] { display: none !important; } " 
                 css += "div[style*='overflow-y: scroll'] > div > div > div[role='button'] { pointer-events: none !important; } "
             }
-            
-            if hideExplore {
+            if defaults.bool(forKey: "hideExplore") {
                 css += "main[role='main'] a[href^='/p/'], main[role='main'] a[href^='/reel/'] { display: none !important; } "
                 css += "svg[aria-label='Chargement...'], svg[aria-label='Loading...'] { display: none !important; } "
             }
-            
-            if hideAds {
+            if defaults.bool(forKey: "hideAds") {
                 css += "article:has(span:contains('Sponsored')), article:has(span:contains('Sponsorisé')) { display: none !important; } "
             }
             
@@ -237,39 +204,25 @@ struct WebViewWrapper: UIViewRepresentable {
                  nav[role="navigation"] { width: 100% !important; }
                  [class*="sidebar"], [class*="desktop"] { display: none !important; }
                  
-                 /* 📞 CALL UI MAGIC FIX (Auto-Resize for Mobile) */
-                 div[role="dialog"] {
+                 /* 📞 CALL UI MAGIC (Applied conditionally via JS class .onyx-call-ui) */
+                 .onyx-call-ui {
                     width: 100vw !important;
                     height: 100vh !important;
-                    max-width: 100% !important;
                     left: 0 !important;
                     top: 0 !important;
-                    
-                    /* SCALE DOWN the huge Desktop Call UI to fit mobile width */
-                    zoom: 0.55 !important; 
-                    /* Or use transform if zoom fails on all elements */
+                    transform: scale(0.6) !important;
                     transform-origin: top left !important;
                  }
+                 .onyx-call-ui > div { width: 166% !important; height: 166% !important; }
                  
-                 /* Center the video/content */
-                 div[role="dialog"] > div {
-                    width: 100% !important; 
-                    height: 100% !important;
-                 }
-
-                 /* Fix Control Bar (Buttons) */
-                 div[role="dialog"] div:has(button) {
+                 .onyx-call-ui div:has(button) {
                     bottom: 20px !important;
                     max-width: 100% !important;
                     flex-wrap: wrap !important;
                     justify-content: center !important;
                     gap: 10px !important;
                  }
-                 /* Make buttons touch-friendly */
-                 div[role="dialog"] button {
-                    transform: scale(1.2); 
-                    margin: 5px !important;
-                 }
+                 .onyx-call-ui button { transform: scale(1.2); margin: 5px !important; }
             """
             
             css += "input[type='text'], input[placeholder='Rechercher'], input[aria-label='Rechercher'] { display: block !important; opacity: 1 !important; visibility: visible !important; }"
@@ -287,7 +240,6 @@ struct WebViewWrapper: UIViewRepresentable {
                     meta.name = 'viewport';
                     document.head.appendChild(meta);
                 }
-                // ALLOW ZOOM (user-scalable=yes) so user can shrink the messy Desktop UI if needed
                 meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover';
                 
                 var styleId = 'onyx-style';
@@ -300,14 +252,28 @@ struct WebViewWrapper: UIViewRepresentable {
                 style.textContent = `\(safeCSS)`;
                 
                 function cleanContent() {
-                     \(hideExplore ? "var loaders = document.querySelectorAll('svg[aria-label=\"Chargement...\"], svg[aria-label=\"Loading...\"]'); loaders.forEach(l => l.style.display = 'none');" : "")
+                     \(defaults.bool(forKey: "hideExplore") ? "var loaders = document.querySelectorAll('svg[aria-label=\"Chargement...\"], svg[aria-label=\"Loading...\"]'); loaders.forEach(l => l.style.display = 'none');" : "")
+                     
+                     // 🕵️ DETECT CALL DIALOG vs COOKIE DIALOG
+                     var dialogs = document.querySelectorAll('div[role="dialog"]');
+                     dialogs.forEach(d => {
+                        // Check if it's a call (mic, cam, video)
+                        var isCall = d.querySelector('video') || d.querySelector('button svg') || d.querySelector('button[aria-label*="Micro"]');
+                        // Check if it's Cookies/Text/Legal
+                        var hasText = d.innerText && (d.innerText.length > 50 || d.innerText.includes('Cookies') || d.innerText.includes('confidentialité'));
+                        
+                        // Apply Call Fix ONLY if it looks like a call and NOT a text popup
+                        if (isCall && !hasText) {
+                            d.classList.add('onyx-call-ui');
+                        } else {
+                            d.classList.remove('onyx-call-ui');
+                        }
+                     });
                 }
                 
                 if (!window.onyxObserver) {
                     cleanContent();
-                    window.onyxObserver = new MutationObserver(function(mutations) {
-                        cleanContent();
-                    });
+                    window.onyxObserver = new MutationObserver(function(mutations) { cleanContent(); });
                     window.onyxObserver.observe(document.body, { childList: true, subtree: true });
                 }
                 
