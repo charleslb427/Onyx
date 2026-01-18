@@ -44,8 +44,8 @@ struct WebViewWrapper: UIViewRepresentable {
         let webView = WKWebView(frame: .zero, configuration: config)
         webView.navigationDelegate = context.coordinator
         webView.uiDelegate = context.coordinator
-        // ✅ RE-ENABLED for Instagram swipe navigation
-        webView.allowsBackForwardNavigationGestures = true
+        // ✅ START DISABLED - will be enabled dynamically when there's history
+        webView.allowsBackForwardNavigationGestures = false
         
         // Pull to Refresh
         let refreshControl = UIRefreshControl()
@@ -115,6 +115,9 @@ struct WebViewWrapper: UIViewRepresentable {
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
             webView.scrollView.refreshControl?.endRefreshing()
             injectFilters(into: webView)
+            
+            // ✅ DYNAMIC SWIPE: Only enable when there's somewhere to go back to
+            webView.allowsBackForwardNavigationGestures = webView.canGoBack
             
             // ✅ SAVE SESSION AFTER PAGE LOADS (to capture new tokens)
             SessionManager.shared.saveSession(from: webView)
