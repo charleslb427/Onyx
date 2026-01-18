@@ -4,19 +4,15 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.provider.Settings
 import android.view.View
 import android.webkit.*
-import android.widget.PopupMenu
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationManagerCompat
@@ -153,7 +149,7 @@ class MainActivity : AppCompatActivity() {
             
             loadWithOverviewMode = true
             useWideViewPort = true
-            setSupportZoom(true)
+            setSupportZoom(true) // Enable zoom for call UI
             builtInZoomControls = true
             displayZoomControls = false
             
@@ -262,6 +258,14 @@ class MainActivity : AppCompatActivity() {
         cssRules.append("nav[role='navigation'] { width: 100% !important; } ")
         cssRules.append("[class*='sidebar'], [class*='desktop'] { display: none !important; } ")
         
+        // 📞 CALL UI MAGIC FIX (Scale Down)
+        cssRules.append("div[role='dialog'] { width: 100vw !important; height: 100vh !important; left: 0 !important; top: 0 !important; transform: scale(0.6) !important; transform-origin: top left !important; } ")
+        cssRules.append("div[role='dialog'] > div { width: 166% !important; height: 166% !important; } ") // Compensate Scale (1/0.6 approx 1.66)
+        
+        // Fix Buttons
+        cssRules.append("div[role='dialog'] div:has(button) { bottom: 20px !important; max-width: 100% !important; flex-wrap: wrap !important; justify-content: center !important; gap: 10px !important; } ")
+        cssRules.append("div[role='dialog'] button { transform: scale(1.2); margin: 5px !important; } ")
+        
         cssRules.append("input[type='text'], input[placeholder='Rechercher'], input[aria-label='Rechercher'] { display: block !important; opacity: 1 !important; visibility: visible !important; } ")
         cssRules.append("div[role='dialog'] { display: block !important; opacity: 1 !important; visibility: visible !important; } ")
         cssRules.append("a[href^='/name/'], a[href^='/explore/tags/'], a[href^='/explore/locations/'] { display: inline-block !important; opacity: 1 !important; visibility: visible !important; } ")
@@ -284,7 +288,8 @@ class MainActivity : AppCompatActivity() {
                     meta.name = 'viewport';
                     document.head.appendChild(meta);
                 }
-                meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover';
+                // ALLOW ZOOM: user-scalable=yes + max-scale 5.0
+                meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover';
                 
                 var styleId = 'onyx-style';
                 var style = document.getElementById(styleId);

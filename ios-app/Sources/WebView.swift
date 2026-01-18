@@ -236,6 +236,40 @@ struct WebViewWrapper: UIViewRepresentable {
                  div[role="main"] { max-width: 100% !important; margin: 0 !important; }
                  nav[role="navigation"] { width: 100% !important; }
                  [class*="sidebar"], [class*="desktop"] { display: none !important; }
+                 
+                 /* 📞 CALL UI MAGIC FIX (Auto-Resize for Mobile) */
+                 div[role="dialog"] {
+                    width: 100vw !important;
+                    height: 100vh !important;
+                    max-width: 100% !important;
+                    left: 0 !important;
+                    top: 0 !important;
+                    
+                    /* SCALE DOWN the huge Desktop Call UI to fit mobile width */
+                    zoom: 0.55 !important; 
+                    /* Or use transform if zoom fails on all elements */
+                    transform-origin: top left !important;
+                 }
+                 
+                 /* Center the video/content */
+                 div[role="dialog"] > div {
+                    width: 100% !important; 
+                    height: 100% !important;
+                 }
+
+                 /* Fix Control Bar (Buttons) */
+                 div[role="dialog"] div:has(button) {
+                    bottom: 20px !important;
+                    max-width: 100% !important;
+                    flex-wrap: wrap !important;
+                    justify-content: center !important;
+                    gap: 10px !important;
+                 }
+                 /* Make buttons touch-friendly */
+                 div[role="dialog"] button {
+                    transform: scale(1.2); 
+                    margin: 5px !important;
+                 }
             """
             
             css += "input[type='text'], input[placeholder='Rechercher'], input[aria-label='Rechercher'] { display: block !important; opacity: 1 !important; visibility: visible !important; }"
@@ -253,7 +287,8 @@ struct WebViewWrapper: UIViewRepresentable {
                     meta.name = 'viewport';
                     document.head.appendChild(meta);
                 }
-                meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover';
+                // ALLOW ZOOM (user-scalable=yes) so user can shrink the messy Desktop UI if needed
+                meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover';
                 
                 var styleId = 'onyx-style';
                 var style = document.getElementById(styleId);
