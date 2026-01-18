@@ -112,17 +112,7 @@ struct WebViewWrapper: UIViewRepresentable {
             injectFilters(into: webView)
         }
         
-        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-            webView.scrollView.refreshControl?.endRefreshing()
-            injectFilters(into: webView)
-            
-            // ✅ DYNAMIC SWIPE: Only enable when there's somewhere to go back to
-            webView.allowsBackForwardNavigationGestures = webView.canGoBack
-            
-            // ✅ SAVE SESSION AFTER PAGE LOADS (to capture new tokens)
-            SessionManager.shared.saveSession(from: webView)
-        }
-        
+        // ✅ DYNAMIC SWIPE & NAV LOGIC
         func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
             guard let url = navigationAction.request.url else {
                 decisionHandler(.allow)
@@ -131,40 +121,44 @@ struct WebViewWrapper: UIViewRepresentable {
             
             let urlString = url.absoluteString
             let defaults = UserDefaults.standard
-            let isBackForward = navigationAction.navigationType == .backForward
             
-            // Block blank pages
+            // 1. BLOCK BLANK/EMPTY
             if urlString == "about:blank" || urlString.isEmpty {
                 decisionHandler(.cancel)
                 return
             }
             
-            // Block non-Instagram on back/forward
-            if !urlString.contains("instagram.com") && isBackForward {
-                decisionHandler(.cancel)
-                return
-            }
-            
-            // Check if this is a blocked page
-            let isReelsBlocked = defaults.bool(forKey: "hideReels") && urlString.contains("/reels/")
-            let isExploreBlocked = defaults.bool(forKey: "hideExplore") && urlString.contains("/explore/")
-            
-            if isReelsBlocked || isExploreBlocked {
-                decisionHandler(.cancel)
-                
-                // If it was a back/forward action, try to skip over the blocked page
-                if isBackForward {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                        // Go to home instead of getting stuck
-                        if let homeURL = URL(string: "https://www.instagram.com/") {
-                            webView.load(URLRequest(url: homeURL))
-                        }
-                    }
+            // 2. BLOCK REELS FEED (Infinite Scroll) but ALLOW specific Reels (DMs/Saved)
+            // The main feed is usually /reels/ or /reels/audio/...
+            // Specific reels are /reels/C7k... (ID)
+            // Strategy: Block strict /reels/ URL, but rely on CSS to remove the button.
+            // If user somehow gets to the main feed, we block it.
+            if defaults.bool(forKey: "hideReels") {
+                // Block ONLY the main feed entry point, allow ids (longer urls)
+                // "https://www.instagram.com/reels/" -> exact match or with query params
+                if urlString == "https://www.instagram.com/reels/" || urlString.contains("/reels/audio/") {
+                     decisionHandler(.cancel)
+                     return
                 }
-                return
+            }
+
+            decisionHandler(.allow)
+        }
+        
+        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+            webView.scrollView.refreshControl?.endRefreshing()
+            injectFilters(into: webView)
+            
+            // ✅ SMART SWIPE CONTROL
+            // Fix White Screen: Strictly disable swipe BACK if we are on Home
+            if let url = webView.url?.absoluteString, url == "https://www.instagram.com/" {
+                webView.allowsBackForwardNavigationGestures = false
+            } else {
+                // Otherwise only enable if valid history exists
+                webView.allowsBackForwardNavigationGestures = webView.canGoBack
             }
             
-            decisionHandler(.allow)
+            SessionManager.shared.saveSession(from: webView)
         }
         
         @available(iOS 15.0, *)
@@ -179,15 +173,37 @@ struct WebViewWrapper: UIViewRepresentable {
             let hideAds = defaults.bool(forKey: "hideAds")
             
             var css = ""
+            
             if hideReels {
-                css += "a[href*='/reels/'], svg[aria-label*='Reels'], a[href='/reels/'] { display: none !important; } div:has(> a[href*='/reels/']) { display: none !important; } "
+                // 1. Hide Reels Tab Button
+                css += "a[href='/reels/'], a[href*='/reels/'][role='link'] { display: none !important; } "
+                
+                // 2. Hide "Reels" section in Profile
+                css += "a[href*='/reels/'] { display: none !important; } " 
+                
+                // 3. Try to disable scroll on Reel pages (Anti-Doomscroll)
+                // This targets the specific container often used for the feed
+                css += "div[style*='overflow-y: scroll'] > div > div > div[role='button'] { pointer-events: none !important; } "
             }
+            
             if hideExplore {
-                css += "a[href='/explore/'], a[href*='/explore'] { display: none !important; } div:has(> a[href*='/explore/']) { display: none !important; } "
+                // 1. Hide Explore Tab (Optional, if you want search only via direct link, but user wants Search)
+                // Actually keep the tab visible if user wants to search? 
+                // User said: "block suggestions grid... so I can use search".
+                // Search is usually on the Explore page. So we MUST NOT hide the tab `a[href='/explore/']`.
+                
+                // 2. Hide the GRID of suggestions (Loop over div structure)
+                // This targets the main grid container on the explore page
+                css += "main[role='main'] > div > div:not(:first-child) { display: none !important; } "
+                // Backup selector for grid items
+                css += "div:has(> a[href^='/p/']), div:has(> a[href^='/reel/']) { display: none !important; } "
             }
+            
             if hideAds {
                 css += "article:has(span:contains('Sponsored')), article:has(span:contains('Sponsorisé')) { display: none !important; } "
             }
+            
+            // Common cleanup
             css += "div[role='tablist'] { justify-content: space-evenly !important; } div[role='banner'], footer, .AppCTA { display: none !important; }"
             
             let safeCSS = css.replacingOccurrences(of: "`", with: "\\`")
