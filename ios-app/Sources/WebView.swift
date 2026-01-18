@@ -187,14 +187,17 @@ struct WebViewWrapper: UIViewRepresentable {
             }
             
             if hideExplore {
-                // 1. Target the specific GRID items on Explore, not the main container
-                // Hide any link to a post or reel within the main area
-                css += "main[role='main'] a[href^='/p/'], main[role='main'] a[href^='/reel/'] { display: none !important; } "
+                // 1. Target URL specific masking
+                // If we are strictly on /explore/, hide the grid images
+                // Use opacity to avoid breaking JS layout/loaders, and pointer-events to prevent clicks
+                css += "main[role='main'] a[href^='/p/'], main[role='main'] a[href^='/reel/'] { opacity: 0 !important; pointer-events: none !important; height: 0 !important; width: 0 !important; } "
                 
-                // 2. Hide specific grid containers to remove whitespace/loaders if possible
-                // Be careful not to hide the Search container at the top
-                // Search usually is in a nav or top div, main grid is below
-                css += "main[role='main'] > div > div:nth-child(n+2) { display: none !important; } "
+                // 2. Do NOT hide main containers indiscriminately as it hides Search Results
+                // Search results usually have a specific 'role' or structure (list of items)
+                // We want to keep anything that looks like a User List Item visible
+                
+                // 3. Remove the 'Loading' spinner if possible (svg acting as loader)
+                css += "svg[aria-label='Chargement...'], svg[aria-label='Loading...'] { display: none !important; } "
             }
             
             if hideAds {
@@ -202,8 +205,9 @@ struct WebViewWrapper: UIViewRepresentable {
             }
             
             // Common cleanup
-            // Ensure inputs are visible!
+            // Ensure inputs and Search Results (often in a dialog or container) are visible
             css += "input[type='text'], input[placeholder='Rechercher'], input[aria-label='Rechercher'] { display: block !important; opacity: 1 !important; visibility: visible !important; }"
+            css += "div[role='dialog'] { display: block !important; opacity: 1 !important; visibility: visible !important; } " // Search often opens in dialog
             css += "div[role='tablist'] { justify-content: space-evenly !important; } div[role='banner'], footer, .AppCTA { display: none !important; }"
             
             let safeCSS = css.replacingOccurrences(of: "`", with: "\\`")
