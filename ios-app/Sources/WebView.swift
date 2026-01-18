@@ -168,6 +168,7 @@ struct WebViewWrapper: UIViewRepresentable {
             }
             
             // 3. PREVENT SWIPE BACK TO LOGIN (Fix accidental logout)
+            let isBackForward = navigationAction.navigationType == .backForward
             if isBackForward && (urlString.contains("/accounts/login") || urlString.contains("/accounts/emailsignup")) {
                 decisionHandler(.cancel)
                 return
