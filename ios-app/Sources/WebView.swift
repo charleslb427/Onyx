@@ -292,7 +292,13 @@ struct WebViewWrapper: UIViewRepresentable {
                     var touch = e.changedTouches[0];
                     var target = document.elementFromPoint(touch.clientX, touch.clientY);
                     var clickable = target ? target.closest('button, [role="button"], a, svg') : null;
+                    
+                    // Only shim if it's a call-related button to be safe, or general buttons
+                    // For now, keep generic but add anti-double-tap
                     if (clickable) {
+                        // Prevent native click to avoid "Double Tap" bug (Join -> Cancel)
+                        if (e.cancelable) e.preventDefault();
+                        
                         var opts = {
                             view: window, bubbles: true, cancelable: true,
                             clientX: touch.clientX, clientY: touch.clientY, screenX: touch.screenX, screenY: touch.screenY,
@@ -304,7 +310,7 @@ struct WebViewWrapper: UIViewRepresentable {
                         clickable.dispatchEvent(new MouseEvent('mouseup', opts));
                         clickable.dispatchEvent(new MouseEvent('click', opts));
                     }
-                }, {passive: true});
+                }, {passive: false}); // 👈 IMPORTANT: passive: false allows preventDefault
             })();
             """
             webView.evaluateJavaScript(js, completionHandler: nil)

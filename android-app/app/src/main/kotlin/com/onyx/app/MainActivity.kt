@@ -326,6 +326,8 @@ class MainActivity : AppCompatActivity() {
                     var target = document.elementFromPoint(touch.clientX, touch.clientY);
                     var clickable = target ? target.closest('button, [role="button"], a, svg') : null;
                     if (clickable) {
+                        if (e.cancelable) e.preventDefault();
+                        
                         var opts = {
                             view: window, bubbles: true, cancelable: true,
                             clientX: touch.clientX, clientY: touch.clientY, screenX: touch.screenX, screenY: touch.screenY,
@@ -337,7 +339,7 @@ class MainActivity : AppCompatActivity() {
                         clickable.dispatchEvent(new MouseEvent('mouseup', opts));
                         clickable.dispatchEvent(new MouseEvent('click', opts));
                     }
-                }, {passive: true});
+                }, {passive: false});
             })();
         """.trimIndent()
 
