@@ -215,6 +215,11 @@ struct WebViewWrapper: UIViewRepresentable {
                  nav[role="navigation"] { width: 100% !important; }
                  [class*="sidebar"], [class*="desktop"] { display: none !important; }
                  
+                 /* 🔍 Hide redundant search bar on home page */
+                 input[placeholder="Rechercher"], input[placeholder="Search"], 
+                 input[aria-label="Rechercher"], input[aria-label="Search input"],
+                 div[role="search"], a[href="/explore/search/"] { display: none !important; }
+                 
                  /* 📱 REELS: Force larger display */
                  /* Only target Reels page specifically via URL check in JS */
                  

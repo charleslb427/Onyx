@@ -268,6 +268,9 @@ class MainActivity : AppCompatActivity() {
         cssRules.append("nav[role='navigation'] { width: 100% !important; } ")
         cssRules.append("[class*='sidebar'], [class*='desktop'] { display: none !important; } ")
         
+        // 🔍 Hide redundant search bar on home page (not on Explore)
+        cssRules.append("div[role='search'] { display: none !important; } ")
+        
         // 📱 REELS: Will be handled conditionally in JS based on URL
         
         // 📞 CALL UI MAGIC: Conditional Class
