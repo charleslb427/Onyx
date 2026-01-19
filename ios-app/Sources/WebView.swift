@@ -196,15 +196,11 @@ struct WebViewWrapper: UIViewRepresentable {
                 css += "a[href='/reels/'], a[href*='/reels/'] { opacity: 1 !important; visibility: visible !important; pointer-events: auto !important; } "
             }
             
-            // EXPLORE: Block feed grid but KEEP navigation link and search visible
+            // EXPLORE: Hide or restore visibility
             if defaults.bool(forKey: "hideExplore") {
-                // Hide the GRID of suggestions on /explore/ page (not the nav link or search)
-                // Target the main content area's grid/posts, not the navigation
-                css += "main[role='main'] article { display: none !important; } "
-                css += "main[role='main'] a[href^='/p/'] { display: none !important; } "
-                css += "main[role='main'] a[href^='/reel/'] { display: none !important; } "
+                css += "a[href='/explore/'], a[href*='/explore'] { display: none !important; pointer-events: none !important; } "
+                css += "main[role='main'] a[href^='/p/'], main[role='main'] a[href^='/reel/'] { display: none !important; pointer-events: none !important; } "
                 css += "svg[aria-label='Chargement...'], svg[aria-label='Loading...'] { display: none !important; } "
-                // Keep the Explore nav link visible (don't hide it)
             } else {
                 // RESTORE visibility (counter early-hide opacity:0)
                 css += "a[href='/explore/'], a[href*='/explore'] { opacity: 1 !important; visibility: visible !important; pointer-events: auto !important; } "
@@ -218,11 +214,6 @@ struct WebViewWrapper: UIViewRepresentable {
                  div[role="main"] { max-width: 100% !important; margin: 0 !important; }
                  nav[role="navigation"] { width: 100% !important; }
                  [class*="sidebar"], [class*="desktop"] { display: none !important; }
-                 
-                 /* 🔍 Hide redundant search bar on home page */
-                 input[placeholder="Rechercher"], input[placeholder="Search"], 
-                 input[aria-label="Rechercher"], input[aria-label="Search input"],
-                 div[role="search"], a[href="/explore/search/"] { display: none !important; }
                  
                  /* 📱 REELS: Force larger display */
                  /* Only target Reels page specifically via URL check in JS */

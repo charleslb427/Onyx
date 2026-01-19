@@ -248,14 +248,11 @@ class MainActivity : AppCompatActivity() {
             cssRules.append("a[href='/reels/'], a[href*='/reels/'] { opacity: 1 !important; visibility: visible !important; pointer-events: auto !important; } ")
         }
         
-        // EXPLORE: Block feed grid but KEEP navigation link and search visible
+        // EXPLORE: Hide or restore visibility
         if (hideExplore) {
-            // Hide the GRID of suggestions on /explore/ page (not the nav link or search)
-            cssRules.append("main[role='main'] article { display: none !important; } ")
-            cssRules.append("main[role='main'] a[href^='/p/'] { display: none !important; } ")
-            cssRules.append("main[role='main'] a[href^='/reel/'] { display: none !important; } ")
+            cssRules.append("a[href='/explore/'], a[href*='/explore'] { display: none !important; pointer-events: none !important; } ")
+            cssRules.append("main[role='main'] a[href^='/p/'], main[role='main'] a[href^='/reel/'] { display: none !important; pointer-events: none !important; } ")
             cssRules.append("svg[aria-label='Chargement...'], svg[aria-label='Loading...'] { display: none !important; } ")
-            // Keep the Explore nav link visible (don't hide it)
         } else {
             // RESTORE visibility
             cssRules.append("a[href='/explore/'], a[href*='/explore'] { opacity: 1 !important; visibility: visible !important; pointer-events: auto !important; } ")
@@ -270,9 +267,6 @@ class MainActivity : AppCompatActivity() {
         cssRules.append("div[role='main'] { max-width: 100% !important; margin: 0 !important; } ")
         cssRules.append("nav[role='navigation'] { width: 100% !important; } ")
         cssRules.append("[class*='sidebar'], [class*='desktop'] { display: none !important; } ")
-        
-        // 🔍 Hide redundant search bar on home page (not on Explore)
-        cssRules.append("div[role='search'] { display: none !important; } ")
         
         // 📱 REELS: Will be handled conditionally in JS based on URL
         
