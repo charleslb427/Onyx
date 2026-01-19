@@ -248,11 +248,14 @@ class MainActivity : AppCompatActivity() {
             cssRules.append("a[href='/reels/'], a[href*='/reels/'] { opacity: 1 !important; visibility: visible !important; pointer-events: auto !important; } ")
         }
         
-        // EXPLORE: Hide or restore visibility
+        // EXPLORE: Block feed grid but KEEP navigation link and search visible
         if (hideExplore) {
-            cssRules.append("a[href='/explore/'], a[href*='/explore'] { display: none !important; pointer-events: none !important; } ")
-            cssRules.append("main[role='main'] a[href^='/p/'], main[role='main'] a[href^='/reel/'] { display: none !important; pointer-events: none !important; } ")
+            // Hide the GRID of suggestions on /explore/ page (not the nav link or search)
+            cssRules.append("main[role='main'] article { display: none !important; } ")
+            cssRules.append("main[role='main'] a[href^='/p/'] { display: none !important; } ")
+            cssRules.append("main[role='main'] a[href^='/reel/'] { display: none !important; } ")
             cssRules.append("svg[aria-label='Chargement...'], svg[aria-label='Loading...'] { display: none !important; } ")
+            // Keep the Explore nav link visible (don't hide it)
         } else {
             // RESTORE visibility
             cssRules.append("a[href='/explore/'], a[href*='/explore'] { opacity: 1 !important; visibility: visible !important; pointer-events: auto !important; } ")

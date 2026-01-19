@@ -196,11 +196,15 @@ struct WebViewWrapper: UIViewRepresentable {
                 css += "a[href='/reels/'], a[href*='/reels/'] { opacity: 1 !important; visibility: visible !important; pointer-events: auto !important; } "
             }
             
-            // EXPLORE: Hide or restore visibility
+            // EXPLORE: Block feed grid but KEEP navigation link and search visible
             if defaults.bool(forKey: "hideExplore") {
-                css += "a[href='/explore/'], a[href*='/explore'] { display: none !important; pointer-events: none !important; } "
-                css += "main[role='main'] a[href^='/p/'], main[role='main'] a[href^='/reel/'] { display: none !important; pointer-events: none !important; } "
+                // Hide the GRID of suggestions on /explore/ page (not the nav link or search)
+                // Target the main content area's grid/posts, not the navigation
+                css += "main[role='main'] article { display: none !important; } "
+                css += "main[role='main'] a[href^='/p/'] { display: none !important; } "
+                css += "main[role='main'] a[href^='/reel/'] { display: none !important; } "
                 css += "svg[aria-label='Chargement...'], svg[aria-label='Loading...'] { display: none !important; } "
+                // Keep the Explore nav link visible (don't hide it)
             } else {
                 // RESTORE visibility (counter early-hide opacity:0)
                 css += "a[href='/explore/'], a[href*='/explore'] { opacity: 1 !important; visibility: visible !important; pointer-events: auto !important; } "
