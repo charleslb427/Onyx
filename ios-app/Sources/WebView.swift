@@ -64,15 +64,15 @@ struct WebViewWrapper: UIViewRepresentable {
         refreshControl.addTarget(context.coordinator, action: #selector(Coordinator.handleRefresh), for: .valueChanged)
         webView.scrollView.refreshControl = refreshControl
         
-        // Desktop UA
-        webView.customUserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15"
+        // iPad Tablet UA (enables calls + keeps mobile-like UI)
+        webView.customUserAgent = "Mozilla/5.0 (iPad; CPU OS 17_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Mobile/15E148 Safari/604.1"
         
         context.coordinator.webView = webView
         
         SessionManager.shared.restoreSession(to: webView) {
             if let url = URL(string: "https://www.instagram.com/") {
                 var request = URLRequest(url: url)
-                request.setValue("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15", forHTTPHeaderField: "User-Agent")
+                request.setValue("Mozilla/5.0 (iPad; CPU OS 17_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Mobile/15E148 Safari/604.1", forHTTPHeaderField: "User-Agent")
                 request.setValue("https://www.instagram.com", forHTTPHeaderField: "Referer")
                 request.setValue("en-US,en;q=0.9", forHTTPHeaderField: "Accept-Language")
                 request.setValue("gzip, deflate, br", forHTTPHeaderField: "Accept-Encoding")
@@ -185,14 +185,25 @@ struct WebViewWrapper: UIViewRepresentable {
             let defaults = UserDefaults.standard
             
             var css = ""
+            
+            // REELS: Hide or restore visibility
             if defaults.bool(forKey: "hideReels") {
-                css += "a[href='/reels/'], a[href*='/reels/'][role='link'] { display: none !important; } "
-                css += "a[href*='/reels/'] { display: none !important; } " 
+                css += "a[href='/reels/'], a[href*='/reels/'][role='link'] { display: none !important; pointer-events: none !important; } "
+                css += "a[href*='/reels/'] { display: none !important; pointer-events: none !important; } " 
                 css += "div[style*='overflow-y: scroll'] > div > div > div[role='button'] { pointer-events: none !important; } "
+            } else {
+                // RESTORE visibility (counter early-hide opacity:0)
+                css += "a[href='/reels/'], a[href*='/reels/'] { opacity: 1 !important; visibility: visible !important; pointer-events: auto !important; } "
             }
+            
+            // EXPLORE: Hide or restore visibility
             if defaults.bool(forKey: "hideExplore") {
-                css += "main[role='main'] a[href^='/p/'], main[role='main'] a[href^='/reel/'] { display: none !important; } "
+                css += "a[href='/explore/'], a[href*='/explore'] { display: none !important; pointer-events: none !important; } "
+                css += "main[role='main'] a[href^='/p/'], main[role='main'] a[href^='/reel/'] { display: none !important; pointer-events: none !important; } "
                 css += "svg[aria-label='Chargement...'], svg[aria-label='Loading...'] { display: none !important; } "
+            } else {
+                // RESTORE visibility (counter early-hide opacity:0)
+                css += "a[href='/explore/'], a[href*='/explore'] { opacity: 1 !important; visibility: visible !important; pointer-events: auto !important; } "
             }
             if defaults.bool(forKey: "hideAds") {
                 css += "article:has(span:contains('Sponsored')), article:has(span:contains('Sponsorisé')) { display: none !important; } "

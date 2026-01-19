@@ -156,7 +156,8 @@ class MainActivity : AppCompatActivity() {
             mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
             mediaPlaybackRequiresUserGesture = false
             javaScriptCanOpenWindowsAutomatically = true
-            userAgentString = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            // Android Tablet UA (enables calls + keeps mobile-like UI)
+            userAgentString = "Mozilla/5.0 (Linux; Android 13; SM-X710) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
             
             setSupportMultipleWindows(true)
             setRenderPriority(WebSettings.RenderPriority.HIGH)
@@ -237,15 +238,24 @@ class MainActivity : AppCompatActivity() {
 
         val cssRules = StringBuilder()
         
+        // REELS: Hide or restore visibility
         if (hideReels) {
-            cssRules.append("a[href='/reels/'], a[href*='/reels/'][role='link'] { display: none !important; } ")
-            cssRules.append("a[href*='/reels/'] { display: none !important; } ") 
+            cssRules.append("a[href='/reels/'], a[href*='/reels/'][role='link'] { display: none !important; pointer-events: none !important; } ")
+            cssRules.append("a[href*='/reels/'] { display: none !important; pointer-events: none !important; } ") 
             cssRules.append("div[style*='overflow-y: scroll'] > div > div > div[role='button'] { pointer-events: none !important; } ")
+        } else {
+            // RESTORE visibility (counter any early-hide)
+            cssRules.append("a[href='/reels/'], a[href*='/reels/'] { opacity: 1 !important; visibility: visible !important; pointer-events: auto !important; } ")
         }
         
+        // EXPLORE: Hide or restore visibility
         if (hideExplore) {
-            cssRules.append("main[role='main'] a[href^='/p/'], main[role='main'] a[href^='/reel/'] { display: none !important; } ")
+            cssRules.append("a[href='/explore/'], a[href*='/explore'] { display: none !important; pointer-events: none !important; } ")
+            cssRules.append("main[role='main'] a[href^='/p/'], main[role='main'] a[href^='/reel/'] { display: none !important; pointer-events: none !important; } ")
             cssRules.append("svg[aria-label='Chargement...'], svg[aria-label='Loading...'] { display: none !important; } ")
+        } else {
+            // RESTORE visibility
+            cssRules.append("a[href='/explore/'], a[href*='/explore'] { opacity: 1 !important; visibility: visible !important; pointer-events: auto !important; } ")
         }
         
         if (hideAds) {
