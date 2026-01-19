@@ -215,30 +215,8 @@ struct WebViewWrapper: UIViewRepresentable {
                  nav[role="navigation"] { width: 100% !important; }
                  [class*="sidebar"], [class*="desktop"] { display: none !important; }
                  
-                 /* 🔇 Hide buggy 'Pour vous' / 'For you' header in Explore */
-                 div[role="tablist"], span:contains("Pour vous"), span:contains("For you") { display: none !important; }
-                 
-                 /* 📱 FORCE MOBILE-STYLE FULLSCREEN REELS */
-                 /* Make Reels video container fill the screen */
-                 div[style*="padding-bottom: 177%"], 
-                 div[style*="aspect-ratio"],
-                 article video,
-                 article[role="presentation"] {
-                     width: 100vw !important;
-                     height: 100vh !important;
-                     max-width: 100vw !important;
-                     max-height: 100vh !important;
-                     object-fit: cover !important;
-                 }
-                 
-                 /* Reels page container */
-                 main[role="main"] section {
-                     width: 100vw !important;
-                     max-width: 100vw !important;
-                 }
-                 
-                 /* Hide Reels sidebar/suggestions on desktop layout */
-                 main[role="main"] aside { display: none !important; }
+                 /* 📱 REELS: Force larger display */
+                 /* Only target Reels page specifically via URL check in JS */
                  
                  /* 📞 CALL UI MAGIC (Applied conditionally via JS class .onyx-call-ui) */
                  .onyx-call-ui {

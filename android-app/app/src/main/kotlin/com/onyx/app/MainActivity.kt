@@ -268,13 +268,8 @@ class MainActivity : AppCompatActivity() {
         cssRules.append("nav[role='navigation'] { width: 100% !important; } ")
         cssRules.append("[class*='sidebar'], [class*='desktop'] { display: none !important; } ")
         
-        // 🔇 Hide buggy 'Pour vous' / 'For you' header in Explore
-        cssRules.append("div[role='tablist'] { display: none !important; } ")
+        // 📱 REELS: Will be handled conditionally in JS based on URL
         
-        // 📱 FORCE MOBILE-STYLE FULLSCREEN REELS
-        cssRules.append("div[style*='padding-bottom: 177%'], div[style*='aspect-ratio'], article video, article[role='presentation'] { width: 100vw !important; height: 100vh !important; max-width: 100vw !important; max-height: 100vh !important; object-fit: cover !important; } ")
-        cssRules.append("main[role='main'] section { width: 100vw !important; max-width: 100vw !important; } ")
-        cssRules.append("main[role='main'] aside { display: none !important; } ")
         // 📞 CALL UI MAGIC: Conditional Class
         cssRules.append(".onyx-call-ui { width: 100vw !important; height: 100vh !important; left: 0 !important; top: 0 !important; transform: scale(0.6) !important; transform-origin: top left !important; } ")
         cssRules.append(".onyx-call-ui > div { width: 166% !important; height: 166% !important; } ")
