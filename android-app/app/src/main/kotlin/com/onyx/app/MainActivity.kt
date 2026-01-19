@@ -248,11 +248,12 @@ class MainActivity : AppCompatActivity() {
             cssRules.append("a[href='/reels/'], a[href*='/reels/'] { opacity: 1 !important; visibility: visible !important; pointer-events: auto !important; } ")
         }
         
-        // EXPLORE: Hide or restore visibility
+        // EXPLORE: Hide "Découvrir/Explore" button but KEEP "Recherche/Search" button visible
         if (hideExplore) {
-            cssRules.append("a[href='/explore/'], a[href*='/explore'] { display: none !important; pointer-events: none !important; } ")
-            cssRules.append("main[role='main'] a[href^='/p/'], main[role='main'] a[href^='/reel/'] { display: none !important; pointer-events: none !important; } ")
-            cssRules.append("svg[aria-label='Chargement...'], svg[aria-label='Loading...'] { display: none !important; } ")
+            // Hide only the Explore/Découvrir link (NOT the Search button)
+            cssRules.append("a[href='/explore/']:not([href*='search']) { display: none !important; pointer-events: none !important; } ")
+            // Also hide the Explore nav item by aria-label
+            cssRules.append("a[aria-label='Découvrir'], a[aria-label='Explore'] { display: none !important; } ")
         } else {
             // RESTORE visibility
             cssRules.append("a[href='/explore/'], a[href*='/explore'] { opacity: 1 !important; visibility: visible !important; pointer-events: auto !important; } ")
@@ -266,7 +267,7 @@ class MainActivity : AppCompatActivity() {
         cssRules.append("@media (min-width: 0px) { body { --grid-numcols: 1 !important; font-size: 16px !important; } } ")
         cssRules.append("div[role='main'] { max-width: 100% !important; margin: 0 !important; } ")
         cssRules.append("nav[role='navigation'] { width: 100% !important; } ")
-        cssRules.append("[class*='sidebar'], [class*='desktop'] { display: none !important; } ")
+        // Keep sidebar visible for Search button
         
         // 📱 REELS: Will be handled conditionally in JS based on URL
         

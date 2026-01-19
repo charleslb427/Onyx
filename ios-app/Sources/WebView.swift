@@ -196,11 +196,13 @@ struct WebViewWrapper: UIViewRepresentable {
                 css += "a[href='/reels/'], a[href*='/reels/'] { opacity: 1 !important; visibility: visible !important; pointer-events: auto !important; } "
             }
             
-            // EXPLORE: Hide or restore visibility
+            // EXPLORE: Hide "Découvrir/Explore" button but KEEP "Recherche/Search" button visible
             if defaults.bool(forKey: "hideExplore") {
-                css += "a[href='/explore/'], a[href*='/explore'] { display: none !important; pointer-events: none !important; } "
-                css += "main[role='main'] a[href^='/p/'], main[role='main'] a[href^='/reel/'] { display: none !important; pointer-events: none !important; } "
-                css += "svg[aria-label='Chargement...'], svg[aria-label='Loading...'] { display: none !important; } "
+                // Hide only the Explore/Découvrir link (NOT the Search button)
+                // Target specifically the /explore/ link, not /explore/search/
+                css += "a[href='/explore/']:not([href*='search']) { display: none !important; pointer-events: none !important; } "
+                // Also hide the Explore nav item by aria-label
+                css += "a[aria-label='Découvrir'], a[aria-label='Explore'] { display: none !important; } "
             } else {
                 // RESTORE visibility (counter early-hide opacity:0)
                 css += "a[href='/explore/'], a[href*='/explore'] { opacity: 1 !important; visibility: visible !important; pointer-events: auto !important; } "
@@ -213,7 +215,7 @@ struct WebViewWrapper: UIViewRepresentable {
                  @media (min-width: 0px) { body { --grid-numcols: 1 !important; font-size: 16px !important; } }
                  div[role="main"] { max-width: 100% !important; margin: 0 !important; }
                  nav[role="navigation"] { width: 100% !important; }
-                 [class*="sidebar"], [class*="desktop"] { display: none !important; }
+                 /* Keep sidebar visible for Search button - only hide specific desktop-only elements */
                  
                  /* 📱 REELS: Force larger display */
                  /* Only target Reels page specifically via URL check in JS */
