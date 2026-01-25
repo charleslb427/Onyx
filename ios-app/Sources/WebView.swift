@@ -38,10 +38,14 @@ struct WebViewWrapper: UIViewRepresentable {
             const originalFetch = window.fetch;
             window.fetch = function(...args) {
                 const url = args[0];
-                if (typeof url === 'string' && url.includes('graphql') && 
-                    (url.includes('explore') || url.includes('TopicalExplore') || url.includes('PolarisExploreLanding'))) {
-                    console.log('[ONYX] Blocked Explore feed request:', url);
-                    return Promise.reject(new Error('Explore feed blocked'));
+                if (typeof url === 'string' && url.includes('graphql')) {
+                    // Block ONLY the main Explore feed queries, NOT search
+                    if (url.includes('PolarisExploreLandingFeed') || 
+                        url.includes('TopicalExploreFeed') ||
+                        url.includes('ExploreGrid')) {
+                        console.log('[ONYX] Blocked Explore feed request:', url);
+                        return Promise.reject(new Error('Explore feed blocked'));
+                    }
                 }
                 return originalFetch.apply(this, args);
             };
@@ -49,11 +53,15 @@ struct WebViewWrapper: UIViewRepresentable {
             // Intercept XHR
             const originalOpen = XMLHttpRequest.prototype.open;
             XMLHttpRequest.prototype.open = function(method, url) {
-                if (typeof url === 'string' && url.includes('graphql') && 
-                    (url.includes('explore') || url.includes('TopicalExplore') || url.includes('PolarisExploreLanding'))) {
-                    console.log('[ONYX] Blocked Explore feed XHR:', url);
-                    this.abort();
-                    return;
+                if (typeof url === 'string' && url.includes('graphql')) {
+                    // Block ONLY the main Explore feed queries, NOT search
+                    if (url.includes('PolarisExploreLandingFeed') || 
+                        url.includes('TopicalExploreFeed') ||
+                        url.includes('ExploreGrid')) {
+                        console.log('[ONYX] Blocked Explore feed XHR:', url);
+                        this.abort();
+                        return;
+                    }
                 }
                 return originalOpen.apply(this, arguments);
             };

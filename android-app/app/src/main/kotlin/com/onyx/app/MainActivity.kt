@@ -200,9 +200,9 @@ class MainActivity : AppCompatActivity() {
                 val prefs = PreferenceManager.getDefaultSharedPreferences(this@MainActivity)
                 val hideExplore = prefs.getBoolean("hide_explore", true)
                 
-                // Block Explore feed API requests
+                // Block Explore feed API requests (but NOT search)
                 if (hideExplore && url.contains("graphql") && 
-                    (url.contains("explore") || url.contains("TopicalExplore") || url.contains("PolarisExploreLanding"))) {
+                    (url.contains("PolarisExploreLandingFeed") || url.contains("TopicalExploreFeed") || url.contains("ExploreGrid"))) {
                     // Return empty response to block the feed
                     return WebResourceResponse("text/plain", "utf-8", null)
                 }
@@ -321,7 +321,7 @@ class MainActivity : AppCompatActivity() {
                 
                 function cleanContent() {
                      ${if (hideExplore) """
-                     // 🚫 BLOCK EXPLORE FEED API REQUESTS
+                     // 🚫 BLOCK EXPLORE FEED API REQUESTS  
                      if (!window.onyxFetchBlocked) {
                          window.onyxFetchBlocked = true;
                          
@@ -329,10 +329,14 @@ class MainActivity : AppCompatActivity() {
                          const originalFetch = window.fetch;
                          window.fetch = function(...args) {
                              const url = args[0];
-                             if (typeof url === 'string' && url.includes('graphql') && 
-                                 (url.includes('explore') || url.includes('TopicalExplore') || url.includes('PolarisExploreLanding'))) {
-                                 console.log('[ONYX] Blocked Explore feed request:', url);
-                                 return Promise.reject(new Error('Explore feed blocked'));
+                             if (typeof url === 'string' && url.includes('graphql')) {
+                                 // Block ONLY the main Explore feed queries, NOT search
+                                 if (url.includes('PolarisExploreLandingFeed') || 
+                                     url.includes('TopicalExploreFeed') ||
+                                     url.includes('ExploreGrid')) {
+                                     console.log('[ONYX] Blocked Explore feed request:', url);
+                                     return Promise.reject(new Error('Explore feed blocked'));
+                                 }
                              }
                              return originalFetch.apply(this, args);
                          };
@@ -340,11 +344,15 @@ class MainActivity : AppCompatActivity() {
                          // Intercept XHR
                          const originalOpen = XMLHttpRequest.prototype.open;
                          XMLHttpRequest.prototype.open = function(method, url) {
-                             if (typeof url === 'string' && url.includes('graphql') && 
-                                 (url.includes('explore') || url.includes('TopicalExplore') || url.includes('PolarisExploreLanding'))) {
-                                 console.log('[ONYX] Blocked Explore feed XHR:', url);
-                                 this.abort();
-                                 return;
+                             if (typeof url === 'string' && url.includes('graphql')) {
+                                 // Block ONLY the main Explore feed queries, NOT search
+                                 if (url.includes('PolarisExploreLandingFeed') || 
+                                     url.includes('TopicalExploreFeed') ||
+                                     url.includes('ExploreGrid')) {
+                                     console.log('[ONYX] Blocked Explore feed XHR:', url);
+                                     this.abort();
+                                     return;
+                                 }
                              }
                              return originalOpen.apply(this, arguments);
                          };
