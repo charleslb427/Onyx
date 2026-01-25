@@ -33,32 +33,30 @@ struct WebViewWrapper: UIViewRepresentable {
             document.documentElement.appendChild(style);
             
             \(hideExploreEarly ? """
-            // 🚫 BLOCK EXPLORE FEED - Inject ASAP
-            // Intercept fetch
+            // 🚫 BLOCK EXPLORE FEED - Simple & Reliable
+            // Intercept fetch - block ALL GraphQL on /explore/ EXCEPT search
             const originalFetch = window.fetch;
             window.fetch = function(...args) {
                 const url = args[0];
                 if (typeof url === 'string' && url.includes('graphql')) {
-                    // Block ONLY the main Explore feed queries, NOT search
-                    if (url.includes('PolarisExploreLandingFeed') || 
-                        url.includes('TopicalExploreFeed') ||
-                        url.includes('ExploreGrid')) {
-                        console.log('[ONYX] Blocked Explore feed request:', url);
-                        return Promise.reject(new Error('Explore feed blocked'));
+                    const path = window.location.pathname;
+                    if ((path === '/explore/' || path === '/explore') && 
+                        !url.includes('Search') && !url.includes('search')) {
+                        console.log('[ONYX] Blocked Explore request:', url);
+                        return Promise.reject(new Error('Explore blocked'));
                     }
                 }
                 return originalFetch.apply(this, args);
             };
             
-            // Intercept XHR
+            // Intercept XHR - block ALL GraphQL on /explore/ EXCEPT search
             const originalOpen = XMLHttpRequest.prototype.open;
             XMLHttpRequest.prototype.open = function(method, url) {
                 if (typeof url === 'string' && url.includes('graphql')) {
-                    // Block ONLY the main Explore feed queries, NOT search
-                    if (url.includes('PolarisExploreLandingFeed') || 
-                        url.includes('TopicalExploreFeed') ||
-                        url.includes('ExploreGrid')) {
-                        console.log('[ONYX] Blocked Explore feed XHR:', url);
+                    const path = window.location.pathname;
+                    if ((path === '/explore/' || path === '/explore') && 
+                        !url.includes('Search') && !url.includes('search')) {
+                        console.log('[ONYX] Blocked Explore XHR:', url);
                         this.abort();
                         return;
                     }
@@ -66,26 +64,28 @@ struct WebViewWrapper: UIViewRepresentable {
                 return originalOpen.apply(this, arguments);
             };
             
-            // Hide ONLY feed grid, keep search bar visible
-            setInterval(function() {
-                if (window.location.pathname === '/explore/' || window.location.pathname === '/explore') {
-                    // Hide feed grid (links to posts/reels)
-                    var feedLinks = document.querySelectorAll('main a[href^="/p/"], main a[href^="/reel/"]');
-                    feedLinks.forEach(function(link) {
-                        // Hide parent containers
-                        var parent = link.closest('article') || link.closest('div[style*="grid"]');
-                        if (parent) parent.style.display = 'none !important';
-                    });
-                    
-                    // Hide error messages
-                    var errors = document.querySelectorAll('[role="alert"]');
-                    errors.forEach(function(el) {
-                        if (el.innerText && (el.innerText.includes('échec') || el.innerText.includes('essayer') || el.innerText.includes('retry') || el.innerText.includes('error'))) {
-                            el.style.display = 'none !important';
-                        }
-                    });
-                }
-            }, 100);
+            // CSS-based hiding: More reliable than DOM manipulation
+            if (!document.getElementById('onyx-explore-css')) {
+                var style = document.createElement('style');
+                style.id = 'onyx-explore-css';
+                style.textContent = `
+                    /* Hide feed grid on /explore/ page only */
+                    body[class*='explore'] main > div > div > div > div,
+                    main article,
+                    main section {
+                        display: none !important;
+                    }
+                    /* Keep search visible */
+                    main input[type='text'],
+                    main [role='button'],
+                    main form,
+                    nav, header {
+                        display: block !important;
+                        visibility: visible !important;
+                    }
+                `;
+                document.head.appendChild(style);
+            }
             """ : "")
             
             try { Object.defineProperty(window.navigator, 'standalone', { get: function() { return true; } }); } catch(e) {}
