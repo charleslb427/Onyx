@@ -357,18 +357,22 @@ class MainActivity : AppCompatActivity() {
                              return originalOpen.apply(this, arguments);
                          };
                          
-                         // Hide feed content and error messages on /explore/ page
+                         // Hide ONLY feed grid, keep search bar visible
                          if (!window.onyxExploreHider) {
                              window.onyxExploreHider = setInterval(function() {
                                  if (window.location.pathname === '/explore/' || window.location.pathname === '/explore') {
-                                     // Hide main content (feed grid)
-                                     var main = document.querySelector('main');
-                                     if (main) main.style.cssText = 'display: none !important;';
+                                     // Hide feed grid (links to posts/reels)
+                                     var feedLinks = document.querySelectorAll('main a[href^="/p/"], main a[href^="/reel/"]');
+                                     feedLinks.forEach(function(link) {
+                                         // Hide parent containers
+                                         var parent = link.closest('article') || link.closest('div[style*="grid"]');
+                                         if (parent) parent.style.display = 'none !important';
+                                     });
                                      
                                      // Hide error messages
-                                     var errors = document.querySelectorAll('[role="alert"], div:has(button)');
+                                     var errors = document.querySelectorAll('[role="alert"]');
                                      errors.forEach(function(el) {
-                                         if (el.innerText && (el.innerText.includes('chec') || el.innerText.includes('essayer') || el.innerText.includes('retry') || el.innerText.includes('error'))) {
+                                         if (el.innerText && (el.innerText.includes('échec') || el.innerText.includes('essayer') || el.innerText.includes('retry') || el.innerText.includes('error'))) {
                                              el.style.display = 'none !important';
                                          }
                                      });
