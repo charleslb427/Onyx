@@ -1,0 +1,20 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- White shield/wing shape -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,24 L74,44 L74,74 L54,84 L34,74 L34,44 Z"/>
+    
+    <!-- Outer Eye (Purple Circle r=10 at 54,54) -->
+    <path
+        android:fillColor="#833AB4"
+        android:pathData="M44,54 a10,10 0 1,0 20,0 a10,10 0 1,0 -20,0"/>
+
+    <!-- Inner Eye (White Circle r=4 at 54,54) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M50,54 a4,4 0 1,0 8,0 a4,4 0 1,0 -8,0"/>
+</vector>

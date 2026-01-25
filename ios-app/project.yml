@@ -1,0 +1,30 @@
+
+name: Onyx
+options:
+  bundleIdPrefix: com.onyx
+targets:
+  Onyx:
+    type: application
+    platform: iOS
+    deploymentTarget: "15.0"
+    sources: [Sources]
+    info:
+      path: Sources/Info.plist
+      properties:
+        CFBundleDisplayName: "Onyx"
+        UISupportsDocumentBrowser: "NO"
+        UIUserInterfaceStyle: "Light"
+        UIViewControllerBasedStatusBarAppearance: "YES"
+        LSApplicationCategoryType: "public.app-category.social-networking"
+        NSCameraUsageDescription: "Onyx a besoin de l'accès à la caméra pour les appels vidéo."
+        NSMicrophoneUsageDescription: "Onyx a besoin de l'accès au microphone pour les messages vocaux et les appels."
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.onyx.app
+        CODE_SIGN_IDENTITY: ""
+        CODE_SIGNING_REQUIRED: "NO"
+        CODE_SIGNING_ALLOWED: "NO"
+        IPHONEOS_DEPLOYMENT_TARGET: "15.0"
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        ASSETCATALOG_COMPILER_APPICON_NAME: "AppIcon"

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Onyx / Meta Style Colors -->
+    
+    <!-- Primary is Black because Instagram UI is mono -->
+    <color name="primary">#000000</color>
+    <color name="primary_variant">#000000</color>
+    
+    <!-- Instagram Blue for actions/links -->
+    <color name="secondary">#0095F6</color>
+    
+    <!-- Backgrounds -->
+    <color name="background">#FFFFFF</color>
+    <color name="surface">#FFFFFF</color>
+    
+    <!-- Text -->
+    <color name="text_primary">#000000</color>
+    <color name="text_secondary">#737373</color>
+    
+    <!-- Status bar -->
+    <color name="status_bar">#FFFFFF</color>
+    
+    <color name="instagram_gradient_start">#000000</color>
+    <color name="instagram_gradient_middle">#000000</color>
+</resources>

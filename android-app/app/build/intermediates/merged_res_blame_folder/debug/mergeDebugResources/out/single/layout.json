@@ -1,0 +1,14 @@
+[
+    {
+        "merged": "C:\\Users\\famil\\.gradle\\daemon\\8.7\\com.onyx.app-mergeDebugResources-41:\\layout\\activity_settings.xml",
+        "source": "C:\\Users\\famil\\.gradle\\daemon\\8.7\\com.onyx.app-main-44:\\layout\\activity_settings.xml"
+    },
+    {
+        "merged": "C:\\Users\\famil\\.gradle\\daemon\\8.7\\com.onyx.app-mergeDebugResources-41:\\layout\\activity_main.xml",
+        "source": "C:\\Users\\famil\\.gradle\\daemon\\8.7\\com.onyx.app-main-44:\\layout\\activity_main.xml"
+    },
+    {
+        "merged": "com.onyx.app-mergeDebugResources-41:/layout/activity_settings.xml",
+        "source": "com.onyx.app-main-44:/layout/activity_settings.xml"
+    }
+]

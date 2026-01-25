@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="call_app_entries">
+        <item>Onyx</item>
+        <item>Instagram</item>
+    </string-array>
+    <string-array name="call_app_values">
+        <item>onyx</item>
+        <item>instagram</item>
+    </string-array>
+</resources>
