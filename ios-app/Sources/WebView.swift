@@ -266,25 +266,23 @@ struct WebViewWrapper: UIViewRepresentable {
                 
                 function cleanContent() {
                      \(defaults.bool(forKey: "hideExplore") ? """
-                     // 🔍 BLOCK EXPLORE FEED with OVERLAY - Keep search working
+                     // 🔍 HIDE EXPLORE FEED - Clean approach without overlay
                      var isExplorePage = window.location.pathname === '/explore/' || window.location.pathname === '/explore';
                      
                      if (isExplorePage) {
-                         // Create or update blocker overlay
-                         var blocker = document.getElementById('onyx-explore-blocker');
-                         if (!blocker) {
-                             blocker = document.createElement('div');
-                             blocker.id = 'onyx-explore-blocker';
-                             blocker.style.cssText = 'position: fixed; top: 120px; left: 0; right: 0; bottom: 60px; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); z-index: 9998; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; font-family: -apple-system, BlinkMacSystemFont, sans-serif;';
-                             blocker.innerHTML = '<div style="text-align: center; padding: 20px;"><div style="font-size: 48px; margin-bottom: 20px;">🔒</div><h2 style="margin: 0 0 10px 0; font-size: 24px;">Feed Explore bloqué</h2><p style="margin: 0; opacity: 0.7; font-size: 14px;">Utilisez la barre de recherche ci-dessus<br>pour trouver des profils, tags ou lieux</p></div>';
-                             document.body.appendChild(blocker);
-                         }
-                     } else {
-                         // Remove blocker if we're not on explore
-                         var existingBlocker = document.getElementById('onyx-explore-blocker');
-                         if (existingBlocker) {
-                             existingBlocker.remove();
-                         }
+                         // Hide the main content area (feed) while keeping search visible
+                         var mainElements = document.querySelectorAll('main, main > div, article, section');
+                         mainElements.forEach(function(el) {
+                             el.style.cssText = 'display: none !important;';
+                         });
+                         
+                         // Also hide any grid containers
+                         var grids = document.querySelectorAll('[style*=\"display\"][style*=\"grid\"], [style*=\"display\"][style*=\"flex\"]');
+                         grids.forEach(function(grid) {
+                             if (grid.querySelector('a[href^=\"/p/\"]') || grid.querySelector('a[href^=\"/reel/\"]')) {
+                                 grid.style.display = 'none !important';
+                             }
+                         });
                      }
                      
                      // Hide loading spinners
