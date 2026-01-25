@@ -24,69 +24,12 @@ struct WebViewWrapper: UIViewRepresentable {
         config.websiteDataStore = WKWebsiteDataStore.default()
         
         // --- EARLY CONFIG ---
-        let hideExploreEarly = UserDefaults.standard.bool(forKey: "hideExplore")
         let earlyHideScript = """
         (function() {
             var style = document.createElement('style');
             style.id = 'onyx-early-hide';
             style.textContent = 'a[href*="/reels/"], a[href="/reels/"], a[href="/explore/"], a[href*="/explore"], div[role="banner"], footer { opacity: 0 !important; transition: opacity 0.1s; }';
             document.documentElement.appendChild(style);
-            
-            \(hideExploreEarly ? """
-            // 🚫 BLOCK EXPLORE FEED - Simple & Reliable
-            // Intercept fetch - block ALL GraphQL on /explore/ EXCEPT search
-            const originalFetch = window.fetch;
-            window.fetch = function(...args) {
-                const url = args[0];
-                if (typeof url === 'string' && url.includes('graphql')) {
-                    const path = window.location.pathname;
-                    if ((path === '/explore/' || path === '/explore') && 
-                        !url.includes('Search') && !url.includes('search')) {
-                        console.log('[ONYX] Blocked Explore request:', url);
-                        return Promise.reject(new Error('Explore blocked'));
-                    }
-                }
-                return originalFetch.apply(this, args);
-            };
-            
-            // Intercept XHR - block ALL GraphQL on /explore/ EXCEPT search
-            const originalOpen = XMLHttpRequest.prototype.open;
-            XMLHttpRequest.prototype.open = function(method, url) {
-                if (typeof url === 'string' && url.includes('graphql')) {
-                    const path = window.location.pathname;
-                    if ((path === '/explore/' || path === '/explore') && 
-                        !url.includes('Search') && !url.includes('search')) {
-                        console.log('[ONYX] Blocked Explore XHR:', url);
-                        this.abort();
-                        return;
-                    }
-                }
-                return originalOpen.apply(this, arguments);
-            };
-            
-            // CSS-based hiding: More reliable than DOM manipulation
-            if (!document.getElementById('onyx-explore-css')) {
-                var style = document.createElement('style');
-                style.id = 'onyx-explore-css';
-                style.textContent = `
-                    /* Hide feed grid on /explore/ page only */
-                    body[class*='explore'] main > div > div > div > div,
-                    main article,
-                    main section {
-                        display: none !important;
-                    }
-                    /* Keep search visible */
-                    main input[type='text'],
-                    main [role='button'],
-                    main form,
-                    nav, header {
-                        display: block !important;
-                        visibility: visible !important;
-                    }
-                `;
-                document.head.appendChild(style);
-            }
-            """ : "")
             
             try { Object.defineProperty(window.navigator, 'standalone', { get: function() { return true; } }); } catch(e) {}
             try { Object.defineProperty(navigator, 'webdriver', { get: () => false }); Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] }); } catch(e) {}
@@ -253,12 +196,11 @@ struct WebViewWrapper: UIViewRepresentable {
                 css += "a[href='/reels/'], a[href*='/reels/'] { opacity: 1 !important; visibility: visible !important; pointer-events: auto !important; } "
             }
             
-            // EXPLORE: Keep button visible, block feed with overlay via JS
+            // EXPLORE: Hide "Découvrir/Explore" button completely
             if defaults.bool(forKey: "hideExplore") {
-                // Don't hide the nav button - we'll block the feed content with an overlay instead
-                css += "a[href='/explore/'], a[href*='/explore'] { opacity: 1 !important; visibility: visible !important; } "
+                css += "a[href='/explore/'], a[href='/explore'] { display: none !important; pointer-events: none !important; } "
+                css += "a[aria-label='Découvrir'], a[aria-label='Explore'] { display: none !important; } "
             } else {
-                // RESTORE visibility (counter early-hide opacity:0)
                 css += "a[href='/explore/'], a[href*='/explore'] { opacity: 1 !important; visibility: visible !important; pointer-events: auto !important; } "
             }
             if defaults.bool(forKey: "hideAds") {

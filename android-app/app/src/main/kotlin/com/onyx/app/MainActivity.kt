@@ -194,23 +194,7 @@ class MainActivity : AppCompatActivity() {
                 try { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) } catch (e: Exception) { }
                 return true
             }
-            
-            override fun shouldInterceptRequest(view: WebView?, request: WebResourceRequest?): WebResourceResponse? {
-                val url = request?.url?.toString() ?: return null
-                val prefs = PreferenceManager.getDefaultSharedPreferences(this@MainActivity)
-                val hideExplore = prefs.getBoolean("hide_explore", true)
-                
-                // Block all GraphQL on /explore/ page EXCEPT search
-                if (hideExplore && url.contains("graphql")) {
-                    val currentUrl = view?.url ?: ""
-                    if ((currentUrl.contains("/explore/") || currentUrl.endsWith("/explore")) &&
-                        !url.contains("Search", ignoreCase = true)) {
-                        return WebResourceResponse("text/plain", "utf-8", null)
-                    }
-                }
-                
-                return null
-            }
+
         }
 
         webView.webChromeClient = object : WebChromeClient() {
@@ -265,12 +249,11 @@ class MainActivity : AppCompatActivity() {
             cssRules.append("a[href='/reels/'], a[href*='/reels/'] { opacity: 1 !important; visibility: visible !important; pointer-events: auto !important; } ")
         }
         
-        // EXPLORE: Keep button visible, block feed with overlay via JS
+        // EXPLORE: Hide "Découvrir/Explore" button completely
         if (hideExplore) {
-            // Don't hide the nav button - we'll block the feed content with an overlay instead
-            cssRules.append("a[href='/explore/'], a[href*='/explore'] { opacity: 1 !important; visibility: visible !important; } ")
+            cssRules.append("a[href='/explore/'], a[href='/explore'] { display: none !important; pointer-events: none !important; } ")
+            cssRules.append("a[aria-label='Découvrir'], a[aria-label='Explore'] { display: none !important; } ")
         } else {
-            // RESTORE visibility
             cssRules.append("a[href='/explore/'], a[href*='/explore'] { opacity: 1 !important; visibility: visible !important; pointer-events: auto !important; } ")
         }
         
@@ -323,65 +306,6 @@ class MainActivity : AppCompatActivity() {
                 
                 function cleanContent() {
                      ${if (hideExplore) """
-                     // 🚫 BLOCK EXPLORE FEED - Simple & Reliable
-                     if (!window.onyxFetchBlocked) {
-                         window.onyxFetchBlocked = true;
-                         
-                         // Intercept fetch - block ALL GraphQL on /explore/ EXCEPT search
-                         const originalFetch = window.fetch;
-                         window.fetch = function(...args) {
-                             const url = args[0];
-                             if (typeof url === 'string' && url.includes('graphql')) {
-                                 const path = window.location.pathname;
-                                 if ((path === '/explore/' || path === '/explore') && 
-                                     !url.includes('Search') && !url.includes('search')) {
-                                     console.log('[ONYX] Blocked Explore request:', url);
-                                     return Promise.reject(new Error('Explore blocked'));
-                                 }
-                             }
-                             return originalFetch.apply(this, args);
-                         };
-                         
-                         // Intercept XHR - block ALL GraphQL on /explore/ EXCEPT search
-                         const originalOpen = XMLHttpRequest.prototype.open;
-                         XMLHttpRequest.prototype.open = function(method, url) {
-                             if (typeof url === 'string' && url.includes('graphql')) {
-                                 const path = window.location.pathname;
-                                 if ((path === '/explore/' || path === '/explore') && 
-                                     !url.includes('Search') && !url.includes('search')) {
-                                     console.log('[ONYX] Blocked Explore XHR:', url);
-                                     this.abort();
-                                     return;
-                                 }
-                             }
-                             return originalOpen.apply(this, arguments);
-                         };
-                         
-                         // CSS-based hiding: More reliable than DOM manipulation
-                         if (!document.getElementById('onyx-explore-css')) {
-                             var style = document.createElement('style');
-                             style.id = 'onyx-explore-css';
-                             style.textContent = `
-                                 /* Hide feed grid on /explore/ page only */
-                                 body[class*='explore'] main > div > div > div > div,
-                                 main article,
-                                 main section {
-                                     display: none !important;
-                                 }
-                                 /* Keep search visible */
-                                 main input[type='text'],
-                                 main [role='button'],
-                                 main form,
-                                 nav, header {
-                                     display: block !important;
-                                     visibility: visible !important;
-                                 }
-                             `;
-                             document.head.appendChild(style);
-                         }
-                     }
-                     
-                     // Hide loading spinners
                      var loaders = document.querySelectorAll('svg[aria-label="Chargement..."], svg[aria-label="Loading..."]');
                      loaders.forEach(l => l.style.display = 'none');
                      """ else ""}
