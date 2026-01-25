@@ -331,6 +331,7 @@ class MainActivity : AppCompatActivity() {
                              const url = args[0];
                              if (typeof url === 'string' && url.includes('graphql') && 
                                  (url.includes('explore') || url.includes('TopicalExplore') || url.includes('PolarisExploreLanding'))) {
+                                 console.log('[ONYX] Blocked Explore feed request:', url);
                                  return Promise.reject(new Error('Explore feed blocked'));
                              }
                              return originalFetch.apply(this, args);
@@ -341,11 +342,31 @@ class MainActivity : AppCompatActivity() {
                          XMLHttpRequest.prototype.open = function(method, url) {
                              if (typeof url === 'string' && url.includes('graphql') && 
                                  (url.includes('explore') || url.includes('TopicalExplore') || url.includes('PolarisExploreLanding'))) {
+                                 console.log('[ONYX] Blocked Explore feed XHR:', url);
                                  this.abort();
                                  return;
                              }
                              return originalOpen.apply(this, arguments);
                          };
+                         
+                         // Hide feed content and error messages on /explore/ page
+                         if (!window.onyxExploreHider) {
+                             window.onyxExploreHider = setInterval(function() {
+                                 if (window.location.pathname === '/explore/' || window.location.pathname === '/explore') {
+                                     // Hide main content (feed grid)
+                                     var main = document.querySelector('main');
+                                     if (main) main.style.cssText = 'display: none !important;';
+                                     
+                                     // Hide error messages
+                                     var errors = document.querySelectorAll('[role="alert"], div:has(button)');
+                                     errors.forEach(function(el) {
+                                         if (el.innerText && (el.innerText.includes('chec') || el.innerText.includes('essayer') || el.innerText.includes('retry') || el.innerText.includes('error'))) {
+                                             el.style.display = 'none !important';
+                                         }
+                                     });
+                                 }
+                             }, 100);
+                         }
                      }
                      
                      // Hide loading spinners

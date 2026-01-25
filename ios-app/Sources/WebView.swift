@@ -24,12 +24,57 @@ struct WebViewWrapper: UIViewRepresentable {
         config.websiteDataStore = WKWebsiteDataStore.default()
         
         // --- EARLY CONFIG ---
+        let hideExploreEarly = UserDefaults.standard.bool(forKey: "hideExplore")
         let earlyHideScript = """
         (function() {
             var style = document.createElement('style');
             style.id = 'onyx-early-hide';
             style.textContent = 'a[href*="/reels/"], a[href="/reels/"], a[href="/explore/"], a[href*="/explore"], div[role="banner"], footer { opacity: 0 !important; transition: opacity 0.1s; }';
             document.documentElement.appendChild(style);
+            
+            \(hideExploreEarly ? """
+            // 🚫 BLOCK EXPLORE FEED - Inject ASAP
+            // Intercept fetch
+            const originalFetch = window.fetch;
+            window.fetch = function(...args) {
+                const url = args[0];
+                if (typeof url === 'string' && url.includes('graphql') && 
+                    (url.includes('explore') || url.includes('TopicalExplore') || url.includes('PolarisExploreLanding'))) {
+                    console.log('[ONYX] Blocked Explore feed request:', url);
+                    return Promise.reject(new Error('Explore feed blocked'));
+                }
+                return originalFetch.apply(this, args);
+            };
+            
+            // Intercept XHR
+            const originalOpen = XMLHttpRequest.prototype.open;
+            XMLHttpRequest.prototype.open = function(method, url) {
+                if (typeof url === 'string' && url.includes('graphql') && 
+                    (url.includes('explore') || url.includes('TopicalExplore') || url.includes('PolarisExploreLanding'))) {
+                    console.log('[ONYX] Blocked Explore feed XHR:', url);
+                    this.abort();
+                    return;
+                }
+                return originalOpen.apply(this, arguments);
+            };
+            
+            // Hide feed content and error messages on /explore/ page
+            setInterval(function() {
+                if (window.location.pathname === '/explore/' || window.location.pathname === '/explore') {
+                    // Hide main content (feed grid)
+                    var main = document.querySelector('main');
+                    if (main) main.style.cssText = 'display: none !important;';
+                    
+                    // Hide error messages
+                    var errors = document.querySelectorAll('[role="alert"], div:has(button)');
+                    errors.forEach(function(el) {
+                        if (el.innerText && (el.innerText.includes('chec') || el.innerText.includes('essayer') || el.innerText.includes('retry') || el.innerText.includes('error'))) {
+                            el.style.display = 'none !important';
+                        }
+                    });
+                }
+            }, 100);
+            """ : "")
             
             try { Object.defineProperty(window.navigator, 'standalone', { get: function() { return true; } }); } catch(e) {}
             try { Object.defineProperty(navigator, 'webdriver', { get: () => false }); Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] }); } catch(e) {}
@@ -266,33 +311,6 @@ struct WebViewWrapper: UIViewRepresentable {
                 
                 function cleanContent() {
                      \(defaults.bool(forKey: "hideExplore") ? """
-                     // 🚫 BLOCK EXPLORE FEED API REQUESTS
-                     if (!window.onyxFetchBlocked) {
-                         window.onyxFetchBlocked = true;
-                         
-                         // Intercept fetch
-                         const originalFetch = window.fetch;
-                         window.fetch = function(...args) {
-                             const url = args[0];
-                             if (typeof url === 'string' && url.includes('graphql') && 
-                                 (url.includes('explore') || url.includes('TopicalExplore') || url.includes('PolarisExploreLanding'))) {
-                                 return Promise.reject(new Error('Explore feed blocked'));
-                             }
-                             return originalFetch.apply(this, args);
-                         };
-                         
-                         // Intercept XHR
-                         const originalOpen = XMLHttpRequest.prototype.open;
-                         XMLHttpRequest.prototype.open = function(method, url) {
-                             if (typeof url === 'string' && url.includes('graphql') && 
-                                 (url.includes('explore') || url.includes('TopicalExplore') || url.includes('PolarisExploreLanding'))) {
-                                 this.abort();
-                                 return;
-                             }
-                             return originalOpen.apply(this, arguments);
-                         };
-                     }
-                     
                      // Hide loading spinners
                      var loaders = document.querySelectorAll('svg[aria-label=\"Chargement...\"], svg[aria-label=\"Loading...\"]');
                      loaders.forEach(l => l.style.display = 'none');
