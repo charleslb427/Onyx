@@ -194,6 +194,21 @@ class MainActivity : AppCompatActivity() {
                 try { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) } catch (e: Exception) { }
                 return true
             }
+            
+            override fun shouldInterceptRequest(view: WebView?, request: WebResourceRequest?): WebResourceResponse? {
+                val url = request?.url?.toString() ?: return null
+                val prefs = PreferenceManager.getDefaultSharedPreferences(this@MainActivity)
+                val hideExplore = prefs.getBoolean("hide_explore", true)
+                
+                // Block Explore feed API requests
+                if (hideExplore && url.contains("graphql") && 
+                    (url.contains("explore") || url.contains("TopicalExplore") || url.contains("PolarisExploreLanding"))) {
+                    // Return empty response to block the feed
+                    return WebResourceResponse("text/plain", "utf-8", null)
+                }
+                
+                return null
+            }
         }
 
         webView.webChromeClient = object : WebChromeClient() {
@@ -306,23 +321,31 @@ class MainActivity : AppCompatActivity() {
                 
                 function cleanContent() {
                      ${if (hideExplore) """
-                     // 🔍 HIDE EXPLORE FEED - Clean approach without overlay
-                     var isExplorePage = window.location.pathname === '/explore/' || window.location.pathname === '/explore';
-                     
-                     if (isExplorePage) {
-                         // Hide the main content area (feed) while keeping search visible
-                         var mainElements = document.querySelectorAll('main, main > div, article, section');
-                         mainElements.forEach(function(el) {
-                             el.style.cssText = 'display: none !important;';
-                         });
+                     // 🚫 BLOCK EXPLORE FEED API REQUESTS
+                     if (!window.onyxFetchBlocked) {
+                         window.onyxFetchBlocked = true;
                          
-                         // Also hide any grid containers
-                         var grids = document.querySelectorAll('[style*="display"][style*="grid"], [style*="display"][style*="flex"]');
-                         grids.forEach(function(grid) {
-                             if (grid.querySelector('a[href^="/p/"]') || grid.querySelector('a[href^="/reel/"]')) {
-                                 grid.style.display = 'none !important';
+                         // Intercept fetch
+                         const originalFetch = window.fetch;
+                         window.fetch = function(...args) {
+                             const url = args[0];
+                             if (typeof url === 'string' && url.includes('graphql') && 
+                                 (url.includes('explore') || url.includes('TopicalExplore') || url.includes('PolarisExploreLanding'))) {
+                                 return Promise.reject(new Error('Explore feed blocked'));
                              }
-                         });
+                             return originalFetch.apply(this, args);
+                         };
+                         
+                         // Intercept XHR
+                         const originalOpen = XMLHttpRequest.prototype.open;
+                         XMLHttpRequest.prototype.open = function(method, url) {
+                             if (typeof url === 'string' && url.includes('graphql') && 
+                                 (url.includes('explore') || url.includes('TopicalExplore') || url.includes('PolarisExploreLanding'))) {
+                                 this.abort();
+                                 return;
+                             }
+                             return originalOpen.apply(this, arguments);
+                         };
                      }
                      
                      // Hide loading spinners

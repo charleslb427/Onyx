@@ -266,23 +266,31 @@ struct WebViewWrapper: UIViewRepresentable {
                 
                 function cleanContent() {
                      \(defaults.bool(forKey: "hideExplore") ? """
-                     // 🔍 HIDE EXPLORE FEED - Clean approach without overlay
-                     var isExplorePage = window.location.pathname === '/explore/' || window.location.pathname === '/explore';
-                     
-                     if (isExplorePage) {
-                         // Hide the main content area (feed) while keeping search visible
-                         var mainElements = document.querySelectorAll('main, main > div, article, section');
-                         mainElements.forEach(function(el) {
-                             el.style.cssText = 'display: none !important;';
-                         });
+                     // 🚫 BLOCK EXPLORE FEED API REQUESTS
+                     if (!window.onyxFetchBlocked) {
+                         window.onyxFetchBlocked = true;
                          
-                         // Also hide any grid containers
-                         var grids = document.querySelectorAll('[style*=\"display\"][style*=\"grid\"], [style*=\"display\"][style*=\"flex\"]');
-                         grids.forEach(function(grid) {
-                             if (grid.querySelector('a[href^=\"/p/\"]') || grid.querySelector('a[href^=\"/reel/\"]')) {
-                                 grid.style.display = 'none !important';
+                         // Intercept fetch
+                         const originalFetch = window.fetch;
+                         window.fetch = function(...args) {
+                             const url = args[0];
+                             if (typeof url === 'string' && url.includes('graphql') && 
+                                 (url.includes('explore') || url.includes('TopicalExplore') || url.includes('PolarisExploreLanding'))) {
+                                 return Promise.reject(new Error('Explore feed blocked'));
                              }
-                         });
+                             return originalFetch.apply(this, args);
+                         };
+                         
+                         // Intercept XHR
+                         const originalOpen = XMLHttpRequest.prototype.open;
+                         XMLHttpRequest.prototype.open = function(method, url) {
+                             if (typeof url === 'string' && url.includes('graphql') && 
+                                 (url.includes('explore') || url.includes('TopicalExplore') || url.includes('PolarisExploreLanding'))) {
+                                 this.abort();
+                                 return;
+                             }
+                             return originalOpen.apply(this, arguments);
+                         };
                      }
                      
                      // Hide loading spinners
