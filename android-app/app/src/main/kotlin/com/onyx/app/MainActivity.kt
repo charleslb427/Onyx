@@ -506,27 +506,55 @@ class MainActivity : AppCompatActivity() {
                      loaders.forEach(l => l.style.display = 'none');
                      """ else ""}
                      
-                     var dialogs = document.querySelectorAll('div[role="dialog"]');
+                     // 🕵️ DETECT CALL DIALOGS - IMPROVED DETECTION
+                     var dialogs = document.querySelectorAll('div[role="dialog"], div[role="presentation"]');
                      dialogs.forEach(function(d) {
                         var text = d.innerText || "";
                         var textLower = text.toLowerCase();
                         
-                        var hasActiveVideo = d.querySelector('video[srcObject], video:not([src=""])');
-                        var hasMedia = d.querySelector('video') || d.querySelector('audio');
+                        console.log('🔍 Dialog found, text preview:', text.substring(0, 100));
                         
-                        var isLobbyKeywords = text.includes("Rejoindre") || text.includes("Join") || 
-                                              text.includes("Prêt") || text.includes("Ready") ||
-                                              text.includes("Démarrer l'appel") || text.includes("Start call");
+                        // Check for ACTIVE video (stream is playing)
+                        var videos = d.querySelectorAll('video');
+                        var hasActiveVideo = false;
+                        videos.forEach(function(v) {
+                            if (v.srcObject || (v.readyState > 0 && !v.paused)) {
+                                hasActiveVideo = true;
+                            }
+                        });
                         
-                        var hasCallButtons = d.querySelector('button[aria-label*="Micro"]') || 
-                                             d.querySelector('button[aria-label*="Caméra"]') ||
-                                             d.querySelector('button[aria-label*="Mic"]') ||
-                                             d.querySelector('button[aria-label*="Camera"]');
+                        // Check for lobby/call indicators
+                        var hasCallButtons = d.querySelector('button svg') !== null;
                         
-                        var isCookieOrLegal = text.includes('Cookies') || text.includes('confidentialité') || 
-                                              text.includes('Paramètres optionnels') || text.includes('privacy');
+                        // Specific call button detection
+                        var hasMicButton = d.querySelector('button[aria-label*="Micro"], button[aria-label*="Mic"], button[aria-label*="micro"], button[aria-label*="mic"]');
+                        var hasCamButton = d.querySelector('button[aria-label*="Caméra"], button[aria-label*="Camera"], button[aria-label*="caméra"], button[aria-label*="camera"], button[aria-label*="Vidéo"], button[aria-label*="Video"]');
                         
-                        if ((isLobbyKeywords || hasCallButtons) && !hasActiveVideo && !isCookieOrLegal) {
+                        // Lobby keywords
+                        var isLobbyKeywords = textLower.includes("rejoindre") || textLower.includes("join") || 
+                                              textLower.includes("prêt") || textLower.includes("ready") ||
+                                              textLower.includes("démarrer") || textLower.includes("start") ||
+                                              textLower.includes("appel") || textLower.includes("call");
+                        
+                        // Exclude other dialogs
+                        var isCookieOrLegal = textLower.includes('cookie') || textLower.includes('confidentialité') || 
+                                              textLower.includes('paramètres optionnels') || textLower.includes('privacy') ||
+                                              textLower.includes('se connecter') || textLower.includes('log in') ||
+                                              textLower.includes('inscription') || textLower.includes('sign up');
+                        
+                        var isCallLobby = (hasMicButton || hasCamButton || (isLobbyKeywords && hasCallButtons)) && !isCookieOrLegal;
+                        
+                        console.log('🔍 Analysis:', {
+                            hasActiveVideo: hasActiveVideo,
+                            hasMicButton: !!hasMicButton,
+                            hasCamButton: !!hasCamButton,
+                            isLobbyKeywords: isLobbyKeywords,
+                            isCallLobby: isCallLobby
+                        });
+                        
+                        // CASE 1: LOBBY
+                        if (isCallLobby && !hasActiveVideo) {
+                            console.log('✅ LOBBY DETECTED! Creating custom lobby...');
                             if (!customLobbyActive) {
                                 createCustomLobby(d);
                             }

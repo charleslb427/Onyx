@@ -478,34 +478,61 @@ struct WebViewWrapper: UIViewRepresentable {
                      loaders.forEach(l => l.style.display = 'none');
                      """ : "")
                      
-                     // 🕵️ DETECT CALL DIALOGS
-                     var dialogs = document.querySelectorAll('div[role="dialog"]');
+                     // 🕵️ DETECT CALL DIALOGS - IMPROVED DETECTION
+                     var dialogs = document.querySelectorAll('div[role="dialog"], div[role="presentation"]');
                      dialogs.forEach(function(d) {
                         var text = d.innerText || "";
                         var textLower = text.toLowerCase();
                         
-                        // Check for active video call (has video element playing)
-                        var hasActiveVideo = d.querySelector('video[srcObject], video:not([src=""])');
-                        var hasMedia = d.querySelector('video') || d.querySelector('audio');
+                        // DEBUG: Log all dialogs
+                        console.log('🔍 Dialog found, text preview:', text.substring(0, 100));
                         
-                        // Check for lobby keywords
-                        var isLobbyKeywords = text.includes("Rejoindre") || text.includes("Join") || 
-                                              text.includes("Prêt") || text.includes("Ready") ||
-                                              text.includes("Démarrer l'appel") || text.includes("Start call");
+                        // Check for ACTIVE video (stream is playing, not just element exists)
+                        var videos = d.querySelectorAll('video');
+                        var hasActiveVideo = false;
+                        videos.forEach(function(v) {
+                            // Video is active if it has a srcObject (WebRTC stream) or is playing
+                            if (v.srcObject || (v.readyState > 0 && !v.paused)) {
+                                hasActiveVideo = true;
+                            }
+                        });
                         
-                        // Check for call buttons
-                        var hasCallButtons = d.querySelector('button[aria-label*="Micro"]') || 
-                                             d.querySelector('button[aria-label*="Caméra"]') ||
-                                             d.querySelector('button[aria-label*="Mic"]') ||
-                                             d.querySelector('button[aria-label*="Camera"]');
+                        // Check for lobby/call indicators - MORE INCLUSIVE
+                        var hasCallButtons = d.querySelector('button svg') !== null; // Most call UIs have SVG icons in buttons
+                        var hasCircularButtons = d.querySelectorAll('button').length >= 2; // Lobby has multiple buttons
                         
-                        // Exclude cookie/legal dialogs
-                        var isCookieOrLegal = text.includes('Cookies') || text.includes('confidentialité') || 
-                                              text.includes('Paramètres optionnels') || text.includes('privacy');
+                        // Specific call button detection
+                        var hasMicButton = d.querySelector('button[aria-label*="Micro"], button[aria-label*="Mic"], button[aria-label*="micro"], button[aria-label*="mic"]');
+                        var hasCamButton = d.querySelector('button[aria-label*="Caméra"], button[aria-label*="Camera"], button[aria-label*="caméra"], button[aria-label*="camera"], button[aria-label*="Vidéo"], button[aria-label*="Video"]');
                         
-                        // CASE 1: LOBBY (pre-call, no active video yet)
-                        if ((isLobbyKeywords || hasCallButtons) && !hasActiveVideo && !isCookieOrLegal) {
-                            // Create custom lobby if not already active
+                        // Lobby keywords (French + English)
+                        var isLobbyKeywords = textLower.includes("rejoindre") || textLower.includes("join") || 
+                                              textLower.includes("prêt") || textLower.includes("ready") ||
+                                              textLower.includes("démarrer") || textLower.includes("start") ||
+                                              textLower.includes("appel") || textLower.includes("call");
+                        
+                        // Exclude cookie/legal/other dialogs
+                        var isCookieOrLegal = textLower.includes('cookie') || textLower.includes('confidentialité') || 
+                                              textLower.includes('paramètres optionnels') || textLower.includes('privacy') ||
+                                              textLower.includes('se connecter') || textLower.includes('log in') ||
+                                              textLower.includes('inscription') || textLower.includes('sign up');
+                        
+                        // IS IT A CALL LOBBY?
+                        var isCallLobby = (hasMicButton || hasCamButton || (isLobbyKeywords && hasCallButtons)) && !isCookieOrLegal;
+                        
+                        console.log('🔍 Analysis:', {
+                            hasActiveVideo: hasActiveVideo,
+                            hasMicButton: !!hasMicButton,
+                            hasCamButton: !!hasCamButton,
+                            isLobbyKeywords: isLobbyKeywords,
+                            hasCallButtons: hasCallButtons,
+                            isCookieOrLegal: isCookieOrLegal,
+                            isCallLobby: isCallLobby
+                        });
+                        
+                        // CASE 1: LOBBY (pre-call, no active video streaming yet)
+                        if (isCallLobby && !hasActiveVideo) {
+                            console.log('✅ LOBBY DETECTED! Creating custom lobby...');
                             if (!customLobbyActive) {
                                 createCustomLobby(d);
                             }
