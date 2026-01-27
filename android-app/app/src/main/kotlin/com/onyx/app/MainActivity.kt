@@ -269,11 +269,108 @@ class MainActivity : AppCompatActivity() {
         
         // 📱 REELS: Will be handled conditionally in JS based on URL
         
-        // 📞 CALL UI MAGIC: Conditional Class
-        cssRules.append(".onyx-call-ui { width: 100vw !important; height: 100vh !important; left: 0 !important; top: 0 !important; transform: scale(0.6) !important; transform-origin: top left !important; } ")
-        cssRules.append(".onyx-call-ui > div { width: 166% !important; height: 166% !important; } ")
-        cssRules.append(".onyx-call-ui div:has(button) { bottom: 20px !important; max-width: 100% !important; flex-wrap: wrap !important; justify-content: center !important; gap: 10px !important; } ")
-        cssRules.append(".onyx-call-ui button { transform: scale(1.2); margin: 5px !important; } ")
+        // 📞 CUSTOM CALL LOBBY - Completely replaces Instagram's buggy lobby
+        cssRules.append("""
+            #onyx-custom-lobby {
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 100vw !important;
+                height: 100vh !important;
+                background: #000 !important;
+                z-index: 999999 !important;
+                display: flex !important;
+                flex-direction: column !important;
+            }
+            #onyx-custom-lobby .lobby-top {
+                flex: 1;
+                background: #1a1a1a;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-bottom: 1px solid #333;
+            }
+            #onyx-custom-lobby .lobby-bottom {
+                flex: 1;
+                background: #111;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+            }
+            #onyx-custom-lobby .user-avatar {
+                width: 80px;
+                height: 80px;
+                background: #404040;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 36px;
+                margin-bottom: 16px;
+            }
+            #onyx-custom-lobby .username {
+                color: white;
+                font-size: 20px;
+                font-weight: 600;
+                margin-bottom: 8px;
+            }
+            #onyx-custom-lobby .call-status {
+                color: #888;
+                font-size: 14px;
+            }
+            #onyx-custom-lobby .controls {
+                position: absolute;
+                bottom: 120px;
+                display: flex;
+                gap: 24px;
+            }
+            #onyx-custom-lobby .control-btn {
+                width: 56px;
+                height: 56px;
+                background: #333;
+                border: none;
+                border-radius: 50%;
+                color: white;
+                font-size: 24px;
+                cursor: pointer;
+            }
+            #onyx-custom-lobby .control-btn.active { background: #0095f6; }
+            #onyx-custom-lobby .control-btn.off { background: #ff3b30; }
+            #onyx-custom-lobby .start-btn {
+                position: absolute;
+                bottom: 40px;
+                left: 50%;
+                transform: translateX(-50%);
+                width: calc(100% - 48px);
+                max-width: 320px;
+                height: 52px;
+                background: #0095f6;
+                color: white;
+                border: none;
+                border-radius: 12px;
+                font-size: 17px;
+                font-weight: 600;
+                cursor: pointer;
+            }
+            #onyx-custom-lobby .cancel-btn {
+                position: absolute;
+                top: 16px;
+                left: 16px;
+                background: rgba(255,255,255,0.1);
+                border: none;
+                color: white;
+                padding: 8px 16px;
+                border-radius: 20px;
+                font-size: 14px;
+                cursor: pointer;
+            }
+            .onyx-lobby-hidden { opacity: 0 !important; pointer-events: none !important; position: absolute !important; left: -9999px !important; }
+            .onyx-call-active { width: 100vw !important; height: 100vh !important; left: 0 !important; top: 0 !important; transform: scale(0.6) !important; transform-origin: top left !important; }
+            .onyx-call-active > div { width: 166% !important; height: 166% !important; }
+            .onyx-call-active div:has(button) { bottom: 20px !important; max-width: 100% !important; flex-wrap: wrap !important; justify-content: center !important; gap: 10px !important; }
+            .onyx-call-active button { transform: scale(1.2); margin: 5px !important; }
+        """)
         
         cssRules.append("input[type='text'], input[placeholder='Rechercher'], input[aria-label='Rechercher'] { display: block !important; opacity: 1 !important; visibility: visible !important; } ")
         cssRules.append("div[role='dialog'] { display: block !important; opacity: 1 !important; visibility: visible !important; } ")
@@ -304,29 +401,145 @@ class MainActivity : AppCompatActivity() {
                 }
                 style.textContent = `$safeCSS`;
                 
+                // 🎯 CUSTOM LOBBY LOGIC
+                var customLobbyActive = false;
+                var originalLobbyRef = null;
+                var micEnabled = true;
+                var camEnabled = false;
+                
+                function createCustomLobby(originalDialog) {
+                    if (document.getElementById('onyx-custom-lobby')) return;
+                    
+                    customLobbyActive = true;
+                    originalLobbyRef = originalDialog;
+                    
+                    originalDialog.classList.add('onyx-lobby-hidden');
+                    
+                    var usernameText = 'Appel en cours...';
+                    var userSpan = originalDialog.querySelector('span');
+                    if (userSpan && userSpan.textContent.length < 30) {
+                        usernameText = userSpan.textContent;
+                    }
+                    
+                    var lobby = document.createElement('div');
+                    lobby.id = 'onyx-custom-lobby';
+                    lobby.innerHTML = `
+                        <button class="cancel-btn" id="onyx-cancel-call">✕ Annuler</button>
+                        <div class="lobby-top">
+                            <span style="color:#666;font-size:14px;">📹 Caméra désactivée</span>
+                        </div>
+                        <div class="lobby-bottom">
+                            <div class="user-avatar">👤</div>
+                            <div class="username">${'$'}{usernameText}</div>
+                            <div class="call-status">Prêt(e) à démarrer ?</div>
+                        </div>
+                        <div class="controls">
+                            <button class="control-btn active" id="onyx-mic-btn">🎤</button>
+                            <button class="control-btn off" id="onyx-cam-btn">📷</button>
+                        </div>
+                        <button class="start-btn" id="onyx-start-call">Démarrer l'appel</button>
+                    `;
+                    document.body.appendChild(lobby);
+                    
+                    document.getElementById('onyx-cancel-call').onclick = function() {
+                        destroyCustomLobby();
+                        var cancelBtn = originalDialog.querySelector('button[aria-label*="Annuler"], button[aria-label*="Cancel"], button[aria-label*="Fermer"], button[aria-label*="Close"]');
+                        if (cancelBtn) cancelBtn.click();
+                        else window.history.back();
+                    };
+                    
+                    document.getElementById('onyx-mic-btn').onclick = function() {
+                        micEnabled = !micEnabled;
+                        this.className = 'control-btn ' + (micEnabled ? 'active' : 'off');
+                        var micBtn = originalDialog.querySelector('button[aria-label*="Micro"], button[aria-label*="Mic"]');
+                        if (micBtn) micBtn.click();
+                    };
+                    
+                    document.getElementById('onyx-cam-btn').onclick = function() {
+                        camEnabled = !camEnabled;
+                        this.className = 'control-btn ' + (camEnabled ? 'active' : 'off');
+                        var camBtn = originalDialog.querySelector('button[aria-label*="Caméra"], button[aria-label*="Camera"], button[aria-label*="Vidéo"], button[aria-label*="Video"]');
+                        if (camBtn) camBtn.click();
+                    };
+                    
+                    document.getElementById('onyx-start-call').onclick = function() {
+                        console.log('🚀 Starting call...');
+                        var buttons = originalDialog.querySelectorAll('button');
+                        var startBtn = null;
+                        buttons.forEach(function(btn) {
+                            var txt = (btn.textContent || '').toLowerCase();
+                            var label = (btn.getAttribute('aria-label') || '').toLowerCase();
+                            if (txt.includes('démarrer') || txt.includes('start') || txt.includes('rejoindre') || txt.includes('join') ||
+                                label.includes('démarrer') || label.includes('start') || label.includes('rejoindre') || label.includes('join')) {
+                                startBtn = btn;
+                            }
+                        });
+                        
+                        if (startBtn) {
+                            console.log('✅ Found start button, clicking...');
+                            startBtn.click();
+                            setTimeout(function() { destroyCustomLobby(); }, 300);
+                        } else {
+                            console.log('❌ Start button not found, trying first prominent button');
+                            var primaryBtn = originalDialog.querySelector('button[style*="background"]');
+                            if (primaryBtn) primaryBtn.click();
+                            setTimeout(function() { destroyCustomLobby(); }, 300);
+                        }
+                    };
+                    
+                    console.log('✅ Custom lobby created');
+                }
+                
+                function destroyCustomLobby() {
+                    var lobby = document.getElementById('onyx-custom-lobby');
+                    if (lobby) lobby.remove();
+                    if (originalLobbyRef) {
+                        originalLobbyRef.classList.remove('onyx-lobby-hidden');
+                    }
+                    customLobbyActive = false;
+                    originalLobbyRef = null;
+                }
+                
                 function cleanContent() {
                      ${if (hideExplore) """
                      var loaders = document.querySelectorAll('svg[aria-label="Chargement..."], svg[aria-label="Loading..."]');
                      loaders.forEach(l => l.style.display = 'none');
                      """ else ""}
                      
-                     // DETECT CALL (Lobby + Active)
                      var dialogs = document.querySelectorAll('div[role="dialog"]');
-                     dialogs.forEach(d => {
+                     dialogs.forEach(function(d) {
                         var text = d.innerText || "";
+                        var textLower = text.toLowerCase();
+                        
+                        var hasActiveVideo = d.querySelector('video[srcObject], video:not([src=""])');
                         var hasMedia = d.querySelector('video') || d.querySelector('audio');
-                        var hasCallButtons = d.querySelector('button svg') || d.querySelector('button[aria-label*="Micro"]');
-                        var isLobby = text.includes("Rejoindre") || text.includes("Join") || text.includes("Prêt") || text.includes("Ready");
                         
-                        var isCall = hasMedia || hasCallButtons || isLobby;
-                        var isCookie = text.includes('Cookies') || text.includes('confidentialité');
+                        var isLobbyKeywords = text.includes("Rejoindre") || text.includes("Join") || 
+                                              text.includes("Prêt") || text.includes("Ready") ||
+                                              text.includes("Démarrer l'appel") || text.includes("Start call");
                         
-                        if (isCall && !isCookie) {
-                            d.classList.add('onyx-call-ui');
+                        var hasCallButtons = d.querySelector('button[aria-label*="Micro"]') || 
+                                             d.querySelector('button[aria-label*="Caméra"]') ||
+                                             d.querySelector('button[aria-label*="Mic"]') ||
+                                             d.querySelector('button[aria-label*="Camera"]');
+                        
+                        var isCookieOrLegal = text.includes('Cookies') || text.includes('confidentialité') || 
+                                              text.includes('Paramètres optionnels') || text.includes('privacy');
+                        
+                        if ((isLobbyKeywords || hasCallButtons) && !hasActiveVideo && !isCookieOrLegal) {
+                            if (!customLobbyActive) {
+                                createCustomLobby(d);
+                            }
+                            return;
+                        }
+                        
+                        if (hasActiveVideo && !isCookieOrLegal) {
+                            if (customLobbyActive) destroyCustomLobby();
                             
-                            // EXIT BTN
-                            var cleanText = d.innerText.toLowerCase();
-                            if (cleanText.includes("appel terminé") || cleanText.includes("call ended") || cleanText.includes("appel fini")) {
+                            d.classList.add('onyx-call-active');
+                            d.classList.remove('onyx-lobby-hidden');
+                            
+                            if (textLower.includes("appel terminé") || textLower.includes("call ended")) {
                                 if (!document.getElementById('onyx-exit-btn')) {
                                     var btn = document.createElement('button');
                                     btn.id = 'onyx-exit-btn';
@@ -336,10 +549,17 @@ class MainActivity : AppCompatActivity() {
                                     d.appendChild(btn);
                                 }
                             }
-                        } else {
-                            d.classList.remove('onyx-call-ui');
+                            return;
                         }
+                        
+                        d.classList.remove('onyx-call-active');
+                        d.classList.remove('onyx-lobby-hidden');
                      });
+                     
+                     if (customLobbyActive) {
+                         var anyLobby = document.querySelector('div[role="dialog"]');
+                         if (!anyLobby) destroyCustomLobby();
+                     }
                 }
                 
                 if (!window.onyxObserver) {
