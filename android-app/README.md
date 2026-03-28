@@ -33,6 +33,12 @@ Application Android et extension Chrome pour utiliser Instagram sans les Reels e
 4. Autoriser Onyx à lire les notifications
 5. ✅ Vous recevrez désormais les notifications Instagram via Onyx
 
+#### Éviter tout risque de ban
+- **Laisser l'app Instagram officielle installée et connectée** : Onyx ne crée pas de compte secondaire ni ne fait d'automatisation. Les notifications proviennent de l'app Instagram officielle et sont simplement relues par Onyx.
+- **Activer uniquement l'accès aux notifications** : pas besoin d'autorisations d'accessibilité ou de services en arrière-plan intrusifs.
+- **Ne pas modifier/renvoyer les notifications** : Onyx se contente d'afficher et d'ouvrir les liens, sans cliquer ni répondre automatiquement.
+- **Toujours ouvrir les notifications via l'intention prévue** (Onyx ou Instagram selon vos préférences) pour rester dans les flux supportés officiellement.
+
 ### ⚠️ Prérequis pour les notifications
 L'app Instagram officielle doit rester installée (elle reçoit les notifications en arrière-plan), mais vous n'avez pas besoin de l'ouvrir.
 
