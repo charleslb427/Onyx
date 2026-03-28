@@ -3,7 +3,7 @@
 Onyx delivers a distraction-free Instagram experience across three surfaces:
 
 - **Chrome extension (Manifest v3)** that hides Reels, Explore, and sponsored posts and offers an in-page control panel.
-- **Android app** that wraps Instagram in a hardened WebView with the same filters, desktop user agent for calls, and notification interception.
+- **Android app** that wraps Instagram in a hardened WebView with the same filters, desktop user-agent for calls, and notification interception.
 - **iOS app** scaffolded via XcodeGen with light configuration for camera/microphone permissions and social networking category.
 
 ## Component breakdown
@@ -16,7 +16,7 @@ Onyx delivers a distraction-free Instagram experience across three surfaces:
 ### Android app (`android-app/`)
 - Kotlin app targeting SDK 34 (min 24) with Java 17 and Material components.
 - `MainActivity` configures a WebView with desktop UA, enables storage/media, injects the same filters and custom call lobby JS/CSS, and blocks Reels/Explore navigation according to shared preferences.
-- Notification support: creates message/call channels, requests POST_NOTIFICATIONS on Tiramisu+, and includes `InstagramNotificationListener` to intercept Instagram notifications. A settings screen exposes user controls.
+- Notification support: creates message/call channels, requests POST_NOTIFICATIONS on Tiramisu (Android 13+), and includes `InstagramNotificationListener` to intercept Instagram notifications. A settings screen exposes user controls.
 
 ### iOS app (`ios-app/`)
 - XcodeGen project (`project.yml`) defining an unsigned iOS 15+ app bundle (`com.onyx.app`) with camera/microphone usage descriptions and social-networking category. Sources live under `ios-app/Sources/`.
